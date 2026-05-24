@@ -74,11 +74,13 @@ def render_summary(summary: dict[str, Any]) -> None:
         table.add_row(field_name, "soft_list_f1", f"{score:.3f}")
     console.print(table)
 
+    gate_config = summary.get("quality_gates") or {}
+    gates_configured = gate_config.get("min_overall") is not None or bool(gate_config.get("min_metrics"))
     if summary.get("quality_gate_failures"):
         console.print("[red]Quality gates failed:[/red]")
         for failure in summary["quality_gate_failures"]:
             console.print(f"  - {failure}")
-    elif summary.get("quality_gates"):
+    elif gates_configured:
         console.print("[green]Quality gates passed.[/green]")
 
     if summary.get("usage"):
@@ -407,7 +409,7 @@ def run() -> None:
     else:
         summary = run_live_eval(args, run_id, run_dir)
 
-    if summary["quality_gate_failures"]:
+    if summary["quality_gate_failures"] or summary["failed_examples"]:
         sys.exit(1)
 
 

@@ -100,6 +100,12 @@ python scripts/run_eval.py --split dev
 python scripts/run_eval.py --split test
 ```
 
+Run the standard dev/test benchmark and compare the splits:
+
+```bash
+python scripts/run_benchmark.py --prompt extract_v2.txt
+```
+
 Run with quality gates:
 
 ```bash
@@ -136,6 +142,7 @@ For a quick smoke test:
 
 ```bash
 python scripts/run_eval.py --limit 1
+python scripts/run_benchmark.py --limit-per-split 1
 ```
 
 The eval runner:
@@ -152,6 +159,7 @@ The eval runner:
 - can estimate run cost from explicit per-token pricing inputs
 - can replay saved predictions to regenerate reports without API calls
 - can compare summary metrics across runs
+- can run a matched dev/test benchmark from one command
 - writes run artifacts under `reports/runs/`
 
 Latest eval snapshot using `gpt-4.1-mini` and `extract_v2.txt` on 34 examples:
@@ -178,6 +186,13 @@ Prompt comparison:
 | --- | ---: | ---: | ---: | ---: |
 | `extract_v1.txt` | 0.854 | 0.573 | 0.442 | 0.794 |
 | `extract_v2.txt` | 0.864 | 0.661 | 0.473 | 0.824 |
+
+Latest dev/test benchmark using `gpt-4.1-mini` and `extract_v2.txt`:
+
+| Split | Examples | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Seniority accuracy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| dev | 21 | 0.880 | 0.678 | 0.507 | 0.714 |
+| test | 13 | 0.838 | 0.646 | 0.406 | 0.385 |
 
 ## What comes next
 
