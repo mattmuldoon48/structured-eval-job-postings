@@ -1,0 +1,16 @@
+{
+  "company": "Acme Corp",
+  "title": "Senior Software Engineer",
+  "seniority": "senior",
+  "employment_type": "full_time",
+  "location": "Seattle, WA",
+  "remote_policy": "hybrid",
+  "salary_min": 130000,
+  "salary_max": 160000,
+  "required_years_experience": 5,
+  "required_skills": ["python", "distributed systems", "cloud infrastructure"],
+  "nice_to_have_skills": ["kubernetes"],
+  "security_clearance_required": false,
+  "sponsorship_available": false,
+  "labeling_notes": "This label is a sample fixture."
+}

@@ -1,0 +1,19 @@
+[project]
+name = "structured-eval-job-postings"
+version = "0.1.0"
+description = "A lightweight Python evaluation harness for structured extraction from job postings."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [ {name = "AI Engineer Portfolio"} ]
+dependencies = [
+  "pydantic>=2.5",
+  "python-dotenv>=1.0",
+  "pytest>=8.0",
+  "rich>=13.0",
+  "openai>=1.0"
+]
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
