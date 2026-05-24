@@ -140,6 +140,12 @@ python scripts/compare_runs.py \
   reports/runs/<candidate-run-id>/summary.json
 ```
 
+Analyze mismatches from a prediction file:
+
+```bash
+python scripts/analyze_run.py reports/runs/<run-id>/predictions.jsonl
+```
+
 For a quick smoke test:
 
 ```bash
@@ -161,6 +167,7 @@ The eval runner:
 - can estimate run cost from explicit per-token pricing inputs
 - can replay saved predictions to regenerate reports without API calls
 - can compare summary metrics across runs
+- can summarize field-level mismatches from saved predictions
 - can run a matched dev/test benchmark from one command
 - writes run artifacts under `reports/runs/`
 
