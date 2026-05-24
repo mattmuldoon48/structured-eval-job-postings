@@ -1,6 +1,8 @@
 # structured-eval-job-postings
 
-A production-style Python LLM evaluation harness for structured extraction from job postings. This repository supports an LLM-assisted labeling workflow for generating draft labels, reviewing corrections, and building a trusted ground-truth dataset.
+A production-style Python LLM evaluation harness for structured extraction from job postings. It combines human-reviewed labels, Pydantic schema validation, prompt versioning, deterministic dev/test splits, and benchmark reports for measuring structured-output quality over time.
+
+Current benchmark: `gpt-4.1-mini` with `extract_v4.txt` scores `0.920` overall on 64 reviewed job postings, with a `0.906` held-out test score.
 
 ## Why this exists
 
@@ -10,6 +12,48 @@ This project demonstrates applied LLM engineering for AI roles by focusing on:
 - validation and regression testing
 - direct SDK usage without a large framework
 - clear, professional project structure
+
+## Workflow
+
+```text
+raw job postings
+  -> LLM draft labels
+  -> human review
+  -> validated JSONL ground truth
+  -> prompt eval runs
+  -> dev/test benchmark comparison
+```
+
+The goal is not just to call an LLM. The goal is to build a small, inspectable evaluation loop that can tell whether prompt changes improve extraction quality without silently breaking fields like seniority, remote policy, salary, or skill lists.
+
+## Results
+
+Latest eval snapshot using `gpt-4.1-mini` and `extract_v4.txt` on 64 examples:
+
+| Metric | Score |
+| --- | ---: |
+| Overall mean score | 0.920 |
+| Company exact accuracy | 0.984 |
+| Title exact accuracy | 0.938 |
+| Seniority exact accuracy | 0.938 |
+| Employment type exact accuracy | 0.969 |
+| Remote policy exact accuracy | 0.766 |
+| Salary min/max exact accuracy | 0.984 / 1.000 |
+| Required years exact accuracy | 0.953 |
+| Company normalized text score | 0.997 |
+| Title normalized text score | 0.983 |
+| Location normalized text score | 0.913 |
+| Required skills soft F1 | 0.792 |
+| Nice-to-have skills soft F1 | 0.680 |
+
+Latest dev/test benchmark:
+
+| Split | Examples | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Seniority accuracy |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| dev | 43 | 0.927 | 0.826 | 0.739 | 0.930 |
+| test | 21 | 0.906 | 0.722 | 0.560 | 0.952 |
+
+See [docs/benchmark_snapshot.md](docs/benchmark_snapshot.md) for the current benchmark summary and error analysis.
 
 ## Setup
 
@@ -186,24 +230,6 @@ The eval runner:
 - can run a matched dev/test benchmark from one command
 - writes run artifacts under `reports/runs/`
 
-Latest eval snapshot using `gpt-4.1-mini` and `extract_v4.txt` on 64 examples:
-
-| Metric | Score |
-| --- | ---: |
-| Overall mean score | 0.920 |
-| Company exact accuracy | 0.984 |
-| Title exact accuracy | 0.938 |
-| Seniority exact accuracy | 0.938 |
-| Employment type exact accuracy | 0.969 |
-| Remote policy exact accuracy | 0.766 |
-| Salary min/max exact accuracy | 0.984 / 1.000 |
-| Required years exact accuracy | 0.953 |
-| Company normalized text score | 0.997 |
-| Title normalized text score | 0.983 |
-| Location normalized text score | 0.913 |
-| Required skills soft F1 | 0.792 |
-| Nice-to-have skills soft F1 | 0.680 |
-
 Historical prompt comparison on the original 34-example set:
 
 | Prompt | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Remote policy accuracy |
@@ -213,18 +239,13 @@ Historical prompt comparison on the original 34-example set:
 | `extract_v3.txt` | 0.887 | 0.647 | 0.469 | 0.824 |
 | `extract_v4.txt` | 0.889 | 0.674 | 0.479 | 0.853 |
 
-Latest dev/test benchmark using `gpt-4.1-mini` and `extract_v4.txt`:
-
-| Split | Examples | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Seniority accuracy |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| dev | 43 | 0.927 | 0.826 | 0.739 | 0.930 |
-| test | 21 | 0.906 | 0.722 | 0.560 | 0.952 |
-
 ## What comes next
 
-Future enhancements may include:
-- persisted benchmark sets for prompt regression testing
-- support for multiple LLM providers
+High-value next improvements:
+- tighten remote/location policy and labels, currently the largest non-skill error source
+- add a small Streamlit or static HTML report viewer for benchmark artifacts
+- add a provider abstraction for Anthropic/Gemini alongside OpenAI
+- expand to about 100 reviewed labels once the current policy is stable
 
 ## Notes
 
