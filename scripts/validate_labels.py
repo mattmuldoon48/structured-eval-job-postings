@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 from rich.console import Console
 from structured_eval.validate_labels import validate_label_file
@@ -21,6 +22,7 @@ def run() -> None:
     console.print(f"[red]Found {len(errors)} invalid record(s):[/red]")
     for index, message in errors:
         console.print(f"  - line {index}: {message}")
+    sys.exit(1)
 
 
 if __name__ == "__main__":

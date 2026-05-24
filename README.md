@@ -67,6 +67,15 @@ Run label validation for all labeled examples:
 python scripts/validate_labels.py
 ```
 
+Run the local non-API checks:
+
+```bash
+python -m pytest -q
+python scripts/validate_labels.py
+```
+
+GitHub Actions runs these checks on pushes and pull requests.
+
 ## Evaluation
 
 Run the extraction eval against the labeled dataset with the default prompt, `extract_v2.txt`:
