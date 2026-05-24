@@ -52,8 +52,7 @@ OPENAI_MODEL=gpt-4.1-mini
 Current dataset:
 
 - 64 raw job postings
-- 34 validated human-reviewed labels
-- 30 draft labels generated with `extract_v4.txt` and awaiting human review
+- 64 validated reviewed labels
 - deterministic split: 43 dev examples, 21 test examples
 - AI/ML, LLM, agentic AI, MLOps, and full-stack AI engineering roles
 
@@ -187,25 +186,25 @@ The eval runner:
 - can run a matched dev/test benchmark from one command
 - writes run artifacts under `reports/runs/`
 
-Latest eval snapshot using `gpt-4.1-mini` and `extract_v4.txt` on 34 examples:
+Latest eval snapshot using `gpt-4.1-mini` and `extract_v4.txt` on 64 examples:
 
 | Metric | Score |
 | --- | ---: |
-| Overall mean score | 0.889 |
-| Company exact accuracy | 0.971 |
-| Title exact accuracy | 0.882 |
-| Seniority exact accuracy | 0.882 |
-| Employment type exact accuracy | 0.941 |
-| Remote policy exact accuracy | 0.853 |
-| Salary min/max exact accuracy | 1.000 / 1.000 |
-| Required years exact accuracy | 0.912 |
-| Company normalized text score | 0.994 |
-| Title normalized text score | 0.968 |
-| Location normalized text score | 0.853 |
-| Required skills soft F1 | 0.674 |
-| Nice-to-have skills soft F1 | 0.479 |
+| Overall mean score | 0.920 |
+| Company exact accuracy | 0.984 |
+| Title exact accuracy | 0.938 |
+| Seniority exact accuracy | 0.938 |
+| Employment type exact accuracy | 0.969 |
+| Remote policy exact accuracy | 0.766 |
+| Salary min/max exact accuracy | 0.984 / 1.000 |
+| Required years exact accuracy | 0.953 |
+| Company normalized text score | 0.997 |
+| Title normalized text score | 0.983 |
+| Location normalized text score | 0.913 |
+| Required skills soft F1 | 0.792 |
+| Nice-to-have skills soft F1 | 0.680 |
 
-Prompt comparison:
+Historical prompt comparison on the original 34-example set:
 
 | Prompt | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Remote policy accuracy |
 | --- | ---: | ---: | ---: | ---: |
@@ -218,8 +217,8 @@ Latest dev/test benchmark using `gpt-4.1-mini` and `extract_v4.txt`:
 
 | Split | Examples | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Seniority accuracy |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| dev | 21 | 0.892 | 0.698 | 0.525 | 0.857 |
-| test | 13 | 0.884 | 0.627 | 0.413 | 0.923 |
+| dev | 43 | 0.927 | 0.826 | 0.739 | 0.930 |
+| test | 21 | 0.906 | 0.722 | 0.560 | 0.952 |
 
 ## What comes next
 
