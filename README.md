@@ -72,6 +72,12 @@ python scripts/label_batch.py
 
 Treat batch labels as draft ground truth until reviewed.
 
+Review draft labels one at a time:
+
+```bash
+python scripts/review_drafts.py
+```
+
 ## Validation
 
 Run label validation for all labeled examples:
