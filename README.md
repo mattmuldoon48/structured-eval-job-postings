@@ -43,6 +43,7 @@ OPENAI_MODEL=gpt-4.1-mini
 
 - `data/raw/job_postings.jsonl` — raw job posting inputs
 - `data/labeled/labeled_jobs.jsonl` — accepted labels
+- `data/splits/job_splits.jsonl` — deterministic dev/test split assignments
 - `prompts/extract_v1.txt` — baseline extraction prompt template
 - `prompts/extract_v2.txt` — more conservative extraction prompt template
 
@@ -50,6 +51,7 @@ Current dataset:
 
 - 34 raw job postings
 - 34 validated human-reviewed labels
+- deterministic split: 21 dev examples, 13 test examples
 - AI/ML, LLM, agentic AI, MLOps, and full-stack AI engineering roles
 
 ## Labeling workflow
@@ -88,6 +90,14 @@ Run a specific prompt version:
 
 ```bash
 python scripts/run_eval.py --prompt extract_v2.txt
+```
+
+Run a split-specific eval:
+
+```bash
+python scripts/create_splits.py
+python scripts/run_eval.py --split dev
+python scripts/run_eval.py --split test
 ```
 
 Run with quality gates:
@@ -133,6 +143,7 @@ The eval runner:
 - generates model predictions for each raw job posting
 - validates predictions against the Pydantic schema
 - compares predictions to labeled ground truth
+- can run against the full dataset or a deterministic split
 - reports strict exact-match metrics for enums, numbers, and booleans
 - reports normalized text scores for company, title, and location
 - reports exact and soft F1 scores for skill lists
@@ -171,7 +182,6 @@ Prompt comparison:
 ## What comes next
 
 Future enhancements may include:
-- held-out train/test splits
 - CI integration for quality gates
 - persisted benchmark sets for prompt regression testing
 - support for multiple LLM providers

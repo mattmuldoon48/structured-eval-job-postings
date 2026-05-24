@@ -20,25 +20,38 @@ from structured_eval.evaluate import (
 from structured_eval.label_assist import generate_draft_label_with_usage
 from structured_eval.llm_client import LLMClient
 from structured_eval.schema import JobPostingLabel
+from structured_eval.splits import load_split_map
 
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW_PATH = ROOT / "data" / "raw" / "job_postings.jsonl"
 LABELED_PATH = ROOT / "data" / "labeled" / "labeled_jobs.jsonl"
+SPLITS_PATH = ROOT / "data" / "splits" / "job_splits.jsonl"
 PROMPTS_DIR = ROOT / "prompts"
 REPORTS_DIR = ROOT / "reports" / "runs"
 console = Console()
 
 
-def build_joined_records() -> list[dict[str, Any]]:
+def build_joined_records(split_name: str | None = None) -> list[dict[str, Any]]:
     raw_by_id = {record["id"]: record for record in load_jsonl(RAW_PATH)}
     labels = load_jsonl(LABELED_PATH)
+    split_map = load_split_map(SPLITS_PATH) if split_name else {}
     joined = []
     for label in labels:
         job_id = label["id"]
         if job_id not in raw_by_id:
             raise ValueError(f"Missing raw posting for labeled id {job_id}")
-        joined.append({"id": job_id, "text": raw_by_id[job_id]["text"], "expected": label})
+        record_split = split_map.get(job_id)
+        if split_name and record_split != split_name:
+            continue
+        joined.append(
+            {
+                "id": job_id,
+                "text": raw_by_id[job_id]["text"],
+                "expected": label,
+                "split": record_split,
+            }
+        )
     return joined
 
 
@@ -87,6 +100,7 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
         f"- Run ID: `{summary['run_id']}`",
         f"- Model: `{summary['model']}`",
         f"- Prompt: `{summary['prompt']}`",
+        f"- Split: `{summary.get('split')}`",
         f"- Examples scored: `{summary['examples']}`",
         f"- Requested examples: `{summary['requested_examples']}`",
         f"- Failed examples: `{summary['failed_examples']}`",
@@ -182,6 +196,7 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run structured extraction evals for labeled job postings.")
     parser.add_argument("--limit", type=int, default=None, help="Maximum number of examples to evaluate.")
+    parser.add_argument("--split", default=None, help="Evaluate only records assigned to this split.")
     parser.add_argument(
         "--replay-predictions",
         default=None,
@@ -250,6 +265,7 @@ def build_summary(
     run_id: str,
     model: str,
     prompt: str,
+    split: str | None,
     requested_examples: int,
     failed_examples: int,
     sample_mismatches: list[dict[str, Any]],
@@ -259,6 +275,7 @@ def build_summary(
     summary["run_id"] = run_id
     summary["model"] = model
     summary["prompt"] = prompt
+    summary["split"] = split
     summary["requested_examples"] = requested_examples
     summary["failed_examples"] = failed_examples
     summary["sample_mismatches"] = sample_mismatches
@@ -281,7 +298,7 @@ def build_summary(
 
 
 def run_live_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[str, Any]:
-    joined = build_joined_records()
+    joined = build_joined_records(split_name=args.split)
     if args.limit is not None:
         joined = joined[: args.limit]
     prompt_path = resolve_prompt_path(args.prompt)
@@ -329,6 +346,7 @@ def run_live_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[
         prediction_records.append(
             {
                 "id": job_id,
+                "split": record.get("split"),
                 "expected": expected.model_dump(mode="json"),
                 "actual": actual.model_dump(mode="json"),
                 "usage": usage,
@@ -341,6 +359,7 @@ def run_live_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[
         run_id=run_id,
         model=client.model,
         prompt=str(prompt_path),
+        split=args.split,
         requested_examples=len(joined),
         failed_examples=failures,
         sample_mismatches=sample_mismatches,
@@ -355,6 +374,8 @@ def run_live_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[
 def run_replay_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[str, Any]:
     replay_path = Path(args.replay_predictions)
     records = load_jsonl(replay_path)
+    if args.split:
+        records = [record for record in records if record.get("split") == args.split]
     if args.limit is not None:
         records = records[: args.limit]
     metric_summary, sample_mismatches, usage_records = score_prediction_records(records)
@@ -364,6 +385,7 @@ def run_replay_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dic
         run_id=run_id,
         model="replay",
         prompt=f"replay:{replay_path}",
+        split=args.split,
         requested_examples=len(records),
         failed_examples=0,
         sample_mismatches=sample_mismatches,
