@@ -139,6 +139,12 @@ python scripts/validate_labels.py
 python scripts/check_dataset.py
 ```
 
+Or use the convenience command:
+
+```bash
+make ci
+```
+
 GitHub Actions runs these checks on pushes and pull requests.
 CI also runs a replay-mode eval quality gate against a small fixture, which exercises scoring without requiring an API key.
 
