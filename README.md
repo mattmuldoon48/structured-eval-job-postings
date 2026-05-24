@@ -55,7 +55,7 @@ Latest dev/test benchmark:
 | dev | 43 | 0.927 | 0.826 | 0.739 | 0.930 |
 | test | 21 | 0.906 | 0.722 | 0.560 | 0.952 |
 
-See [docs/project_summary.md](docs/project_summary.md) for a reviewer-friendly overview, [docs/benchmark_snapshot.md](docs/benchmark_snapshot.md) for the current benchmark summary and error analysis, and [docs/portfolio_blurb.md](docs/portfolio_blurb.md) for resume/portfolio wording.
+See [docs/project_summary.md](docs/project_summary.md) for a reviewer-friendly overview and [docs/benchmark_snapshot.md](docs/benchmark_snapshot.md) for the current benchmark summary and error analysis.
 
 ## Setup
 
