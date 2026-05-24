@@ -27,6 +27,9 @@ jobs:
       - name: Validate labeled data
         run: python scripts/validate_labels.py
 
+      - name: Check dataset integrity
+        run: python scripts/check_dataset.py
+
       - name: Run replay eval quality gate
         run: |
           python scripts/run_eval.py \

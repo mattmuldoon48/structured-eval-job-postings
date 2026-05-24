@@ -136,6 +136,7 @@ Run the local non-API checks:
 ```bash
 python -m pytest -q
 python scripts/validate_labels.py
+python scripts/check_dataset.py
 ```
 
 GitHub Actions runs these checks on pushes and pull requests.
