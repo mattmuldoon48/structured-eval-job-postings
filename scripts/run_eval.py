@@ -14,6 +14,7 @@ from structured_eval.evaluate import (
     evaluate_quality_gates,
     example_mismatches,
     load_jsonl,
+    score_prediction_records,
     summarize_usage,
 )
 from structured_eval.label_assist import generate_draft_label_with_usage
@@ -182,6 +183,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run structured extraction evals for labeled job postings.")
     parser.add_argument("--limit", type=int, default=None, help="Maximum number of examples to evaluate.")
     parser.add_argument(
+        "--replay-predictions",
+        default=None,
+        help="Re-score an existing predictions.jsonl file without making model calls.",
+    )
+    parser.add_argument(
         "--prompt",
         default="extract_v2.txt",
         help="Prompt file under prompts/ or an explicit path.",
@@ -208,80 +214,53 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run() -> None:
-    args = parse_args()
-    joined = build_joined_records()
-    if args.limit is not None:
-        joined = joined[: args.limit]
-    prompt_path = Path(args.prompt)
+def resolve_prompt_path(prompt: str) -> Path:
+    prompt_path = Path(prompt)
     if not prompt_path.is_absolute():
         prompt_path = PROMPTS_DIR / prompt_path
     if not prompt_path.exists():
         raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
-    client = LLMClient.from_env()
-    run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_dir = REPORTS_DIR / run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
+    return prompt_path
 
-    accumulator = EvalAccumulator()
+
+def write_run_outputs(
+    run_dir: Path,
+    summary: dict[str, Any],
+    prediction_records: list[dict[str, Any]],
+) -> None:
     predictions_path = run_dir / "predictions.jsonl"
-    errors_path = run_dir / "errors.jsonl"
-    failures = 0
-    sample_mismatches = []
-    usage_records = []
-
     with predictions_path.open("w", encoding="utf-8") as stream:
-        for index, record in enumerate(joined, start=1):
-            job_id = record["id"]
-            console.print(f"[cyan]Evaluating {job_id}[/cyan] ({index}/{len(joined)})")
-            expected = JobPostingLabel.model_validate(record["expected"])
-            try:
-                actual, llm_result = generate_draft_label_with_usage(
-                    record["text"],
-                    client=client,
-                    prompt_path=prompt_path,
-                )
-            except Exception as exc:
-                failures += 1
-                with errors_path.open("a", encoding="utf-8") as error_stream:
-                    error_stream.write(
-                        json.dumps(
-                            {
-                                "id": job_id,
-                                "error_type": type(exc).__name__,
-                                "error": str(exc),
-                            },
-                            ensure_ascii=False,
-                        )
-                        + "\n"
-                    )
-                console.print(f"[red]Stopping after {job_id}: {type(exc).__name__}: {exc}[/red]")
-                break
-            accumulator.add(expected, actual)
-            for mismatch in example_mismatches(expected, actual):
-                if len(sample_mismatches) < 12:
-                    sample_mismatches.append({"id": job_id, **mismatch})
-            usage = llm_result.usage_dict()
-            usage_records.append(usage)
-            stream.write(
-                json.dumps(
-                    {
-                        "id": job_id,
-                        "expected": expected.model_dump(mode="json"),
-                        "actual": actual.model_dump(mode="json"),
-                        "usage": usage,
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
+        for record in prediction_records:
+            stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+    summary["predictions_path"] = str(predictions_path)
 
-    summary = accumulator.summary()
+    summary_path = run_dir / "summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    markdown_path = run_dir / "report.md"
+    markdown_path.write_text(render_markdown_report(summary), encoding="utf-8")
+
+    render_summary(summary)
+    console.print(f"[green]Wrote report:[/green] {summary_path}")
+    console.print(f"[green]Wrote markdown:[/green] {markdown_path}")
+
+
+def build_summary(
+    metric_summary: dict[str, Any],
+    args: argparse.Namespace,
+    run_id: str,
+    model: str,
+    prompt: str,
+    requested_examples: int,
+    failed_examples: int,
+    sample_mismatches: list[dict[str, Any]],
+    usage_records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    summary = metric_summary
     summary["run_id"] = run_id
-    summary["model"] = client.model
-    summary["prompt"] = str(prompt_path)
-    summary["requested_examples"] = len(joined)
-    summary["failed_examples"] = failures
+    summary["model"] = model
+    summary["prompt"] = prompt
+    summary["requested_examples"] = requested_examples
+    summary["failed_examples"] = failed_examples
     summary["sample_mismatches"] = sample_mismatches
     summary["usage"] = summarize_usage(usage_records)
     summary["cost_estimate"] = estimate_cost(
@@ -298,18 +277,114 @@ def run() -> None:
         min_overall=args.min_overall,
         metric_gates=args.min_metric,
     )
-    summary["predictions_path"] = str(predictions_path)
+    return summary
+
+
+def run_live_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[str, Any]:
+    joined = build_joined_records()
+    if args.limit is not None:
+        joined = joined[: args.limit]
+    prompt_path = resolve_prompt_path(args.prompt)
+    client = LLMClient.from_env()
+
+    accumulator = EvalAccumulator()
+    errors_path = run_dir / "errors.jsonl"
+    failures = 0
+    sample_mismatches = []
+    usage_records = []
+    prediction_records = []
+
+    for index, record in enumerate(joined, start=1):
+        job_id = record["id"]
+        console.print(f"[cyan]Evaluating {job_id}[/cyan] ({index}/{len(joined)})")
+        expected = JobPostingLabel.model_validate(record["expected"])
+        try:
+            actual, llm_result = generate_draft_label_with_usage(
+                record["text"],
+                client=client,
+                prompt_path=prompt_path,
+            )
+        except Exception as exc:
+            failures += 1
+            with errors_path.open("a", encoding="utf-8") as error_stream:
+                error_stream.write(
+                    json.dumps(
+                        {
+                            "id": job_id,
+                            "error_type": type(exc).__name__,
+                            "error": str(exc),
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+            console.print(f"[red]Stopping after {job_id}: {type(exc).__name__}: {exc}[/red]")
+            break
+        accumulator.add(expected, actual)
+        for mismatch in example_mismatches(expected, actual):
+            if len(sample_mismatches) < 12:
+                sample_mismatches.append({"id": job_id, **mismatch})
+        usage = llm_result.usage_dict()
+        usage_records.append(usage)
+        prediction_records.append(
+            {
+                "id": job_id,
+                "expected": expected.model_dump(mode="json"),
+                "actual": actual.model_dump(mode="json"),
+                "usage": usage,
+            }
+        )
+
+    summary = build_summary(
+        accumulator.summary(),
+        args=args,
+        run_id=run_id,
+        model=client.model,
+        prompt=str(prompt_path),
+        requested_examples=len(joined),
+        failed_examples=failures,
+        sample_mismatches=sample_mismatches,
+        usage_records=usage_records,
+    )
     if errors_path.exists():
         summary["errors_path"] = str(errors_path)
+    write_run_outputs(run_dir, summary, prediction_records)
+    return summary
 
-    summary_path = run_dir / "summary.json"
-    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    markdown_path = run_dir / "report.md"
-    markdown_path.write_text(render_markdown_report(summary), encoding="utf-8")
 
-    render_summary(summary)
-    console.print(f"[green]Wrote report:[/green] {summary_path}")
-    console.print(f"[green]Wrote markdown:[/green] {markdown_path}")
+def run_replay_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[str, Any]:
+    replay_path = Path(args.replay_predictions)
+    records = load_jsonl(replay_path)
+    if args.limit is not None:
+        records = records[: args.limit]
+    metric_summary, sample_mismatches, usage_records = score_prediction_records(records)
+    summary = build_summary(
+        metric_summary,
+        args=args,
+        run_id=run_id,
+        model="replay",
+        prompt=f"replay:{replay_path}",
+        requested_examples=len(records),
+        failed_examples=0,
+        sample_mismatches=sample_mismatches,
+        usage_records=usage_records,
+    )
+    summary["replay_source_path"] = str(replay_path)
+    write_run_outputs(run_dir, summary, records)
+    return summary
+
+
+def run() -> None:
+    args = parse_args()
+    run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_dir = REPORTS_DIR / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.replay_predictions:
+        summary = run_replay_eval(args, run_id, run_dir)
+    else:
+        summary = run_live_eval(args, run_id, run_dir)
+
     if summary["quality_gate_failures"]:
         sys.exit(1)
 

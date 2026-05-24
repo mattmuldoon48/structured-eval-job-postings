@@ -107,6 +107,13 @@ python scripts/run_eval.py \
   --output-cost-per-1m 1.60
 ```
 
+Replay an existing prediction file without making model calls:
+
+```bash
+python scripts/run_eval.py \
+  --replay-predictions reports/runs/<run-id>/predictions.jsonl
+```
+
 For a quick smoke test:
 
 ```bash
@@ -124,6 +131,7 @@ The eval runner:
 - can fail the run when quality gates are not met
 - records token usage and latency for each model call
 - can estimate run cost from explicit per-token pricing inputs
+- can replay saved predictions to regenerate reports without API calls
 - writes run artifacts under `reports/runs/`
 
 Latest eval snapshot using `gpt-4.1-mini` and `extract_v2.txt` on 34 examples:
@@ -156,7 +164,7 @@ Prompt comparison:
 Future enhancements may include:
 - held-out train/test splits
 - CI integration for quality gates
-- cached/replayable predictions for offline report iteration
+- report comparison utilities across runs
 - support for multiple LLM providers
 
 ## Notes

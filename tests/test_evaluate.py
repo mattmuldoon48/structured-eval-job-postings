@@ -5,6 +5,7 @@ from structured_eval.evaluate import (
     evaluate_quality_gates,
     example_mismatches,
     parse_metric_gate,
+    score_prediction_records,
     soft_list_f1,
     summarize_usage,
     token_overlap_score,
@@ -130,3 +131,34 @@ def test_estimate_cost_uses_input_and_output_rates():
     assert estimate["input_cost_usd"] == 0.4
     assert estimate["output_cost_usd"] == 0.8
     assert estimate["total_cost_usd"] == pytest.approx(1.2)
+
+
+def test_score_prediction_records_scores_replay_records():
+    records = [
+        {
+            "id": "job-001",
+            "expected": JobPostingLabel(
+                company="Acme",
+                title="AI Engineer",
+                required_skills=["Python"],
+            ).model_dump(mode="json"),
+            "actual": JobPostingLabel(
+                company="Acme",
+                title="AI Engineer",
+                required_skills=["Python"],
+            ).model_dump(mode="json"),
+            "usage": {
+                "latency_seconds": 1.0,
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+            },
+        }
+    ]
+
+    summary, mismatches, usage_records = score_prediction_records(records)
+
+    assert summary["examples"] == 1
+    assert summary["overall_mean_score"] == 1.0
+    assert mismatches == []
+    assert usage_records == [records[0]["usage"]]

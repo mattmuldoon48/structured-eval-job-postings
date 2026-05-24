@@ -288,6 +288,27 @@ def estimate_cost(
     }
 
 
+def score_prediction_records(
+    records: list[dict[str, Any]],
+    mismatch_limit: int = 12,
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    accumulator = EvalAccumulator()
+    sample_mismatches = []
+    usage_records = []
+
+    for record in records:
+        expected = JobPostingLabel.model_validate(record["expected"])
+        actual = JobPostingLabel.model_validate(record["actual"])
+        accumulator.add(expected, actual)
+        for mismatch in example_mismatches(expected, actual):
+            if len(sample_mismatches) < mismatch_limit:
+                sample_mismatches.append({"id": record["id"], **mismatch})
+        if record.get("usage"):
+            usage_records.append(record["usage"])
+
+    return accumulator.summary(), sample_mismatches, usage_records
+
+
 @dataclass
 class EvalAccumulator:
     exact_totals: dict[str, int] = field(default_factory=lambda: {field: 0 for field in EXACT_FIELDS})
