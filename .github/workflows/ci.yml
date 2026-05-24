@@ -26,3 +26,11 @@ jobs:
 
       - name: Validate labeled data
         run: python scripts/validate_labels.py
+
+      - name: Run replay eval quality gate
+        run: |
+          python scripts/run_eval.py \
+            --replay-predictions tests/fixtures/replay_predictions.jsonl \
+            --min-overall 0.99 \
+            --min-metric exact_accuracy.seniority=1.0 \
+            --min-metric soft_list_f1.required_skills=1.0

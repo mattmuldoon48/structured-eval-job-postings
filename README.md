@@ -78,6 +78,7 @@ python scripts/validate_labels.py
 ```
 
 GitHub Actions runs these checks on pushes and pull requests.
+CI also runs a replay-mode eval quality gate against a small fixture, which exercises scoring without requiring an API key.
 
 ## Evaluation
 
@@ -199,7 +200,6 @@ Latest dev/test benchmark using `gpt-4.1-mini` and `extract_v3.txt`:
 ## What comes next
 
 Future enhancements may include:
-- CI integration for quality gates
 - persisted benchmark sets for prompt regression testing
 - support for multiple LLM providers
 
