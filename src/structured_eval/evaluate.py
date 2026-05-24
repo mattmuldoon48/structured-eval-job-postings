@@ -20,7 +20,41 @@ EXACT_FIELDS = [
     "security_clearance_required",
     "sponsorship_available",
 ]
+NORMALIZED_FIELDS = ["company", "title", "location"]
 LIST_FIELDS = ["required_skills", "nice_to_have_skills"]
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "architectures",
+    "based",
+    "development",
+    "engineering",
+    "experience",
+    "framework",
+    "frameworks",
+    "in",
+    "model",
+    "models",
+    "of",
+    "or",
+    "platform",
+    "platforms",
+    "system",
+    "systems",
+    "the",
+    "to",
+    "tools",
+    "using",
+    "with",
+}
+SKILL_SYNONYMS = {
+    "genai": "generative ai",
+    "generative": "generative ai",
+    "llm": "llms",
+    "rag": "retrieval augmented generation",
+    "restful": "rest",
+}
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -35,20 +69,77 @@ def normalize_scalar(value: Any) -> Any:
     return value
 
 
+def normalized_text(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    value = value.lower().replace("&", " and ")
+    value = re.sub(r"[^a-z0-9]+", " ", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    return value or None
+
+
+def token_set(value: str) -> set[str]:
+    normalized = normalized_text(value)
+    if normalized is None:
+        return set()
+    tokens = set()
+    for token in normalized.split():
+        token = SKILL_SYNONYMS.get(token, token)
+        if token not in STOPWORDS:
+            tokens.add(token)
+    return tokens
+
+
+def token_overlap_score(expected: Any, actual: Any) -> float:
+    if expected is None and actual is None:
+        return 1.0
+    if expected is None or actual is None:
+        return 0.0
+    expected_tokens = token_set(str(expected))
+    actual_tokens = token_set(str(actual))
+    if not expected_tokens and not actual_tokens:
+        return 1.0
+    if not expected_tokens or not actual_tokens:
+        return 0.0
+    overlap = len(expected_tokens & actual_tokens)
+    precision = overlap / len(actual_tokens)
+    recall = overlap / len(expected_tokens)
+    if precision + recall == 0:
+        return 0.0
+    return 2 * precision * recall / (precision + recall)
+
+
 def normalize_list(values: list[str]) -> set[str]:
     return {normalize_scalar(value) for value in values if normalize_scalar(value)}
 
 
-def list_f1(expected: list[str], actual: list[str]) -> float:
-    expected_set = normalize_list(expected)
-    actual_set = normalize_list(actual)
-    if not expected_set and not actual_set:
+def exact_list_f1(expected: list[str], actual: list[str]) -> float:
+    expected_items = normalize_list(expected)
+    actual_items = normalize_list(actual)
+    if not expected_items and not actual_items:
         return 1.0
-    if not expected_set or not actual_set:
+    if not expected_items or not actual_items:
         return 0.0
-    overlap = len(expected_set & actual_set)
-    precision = overlap / len(actual_set)
-    recall = overlap / len(expected_set)
+    overlap = len(expected_items & actual_items)
+    precision = overlap / len(actual_items)
+    recall = overlap / len(expected_items)
+    if precision + recall == 0:
+        return 0.0
+    return 2 * precision * recall / (precision + recall)
+
+
+def soft_list_f1(expected: list[str], actual: list[str]) -> float:
+    expected_items = [item for item in expected if normalized_text(item)]
+    actual_items = [item for item in actual if normalized_text(item)]
+    if not expected_items and not actual_items:
+        return 1.0
+    if not expected_items or not actual_items:
+        return 0.0
+
+    precision = sum(max(token_overlap_score(expected, actual) for expected in expected_items) for actual in actual_items)
+    precision /= len(actual_items)
+    recall = sum(max(token_overlap_score(expected, actual) for actual in actual_items) for expected in expected_items)
+    recall /= len(expected_items)
     if precision + recall == 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)
@@ -58,7 +149,9 @@ def list_f1(expected: list[str], actual: list[str]) -> float:
 class EvalAccumulator:
     exact_totals: dict[str, int] = field(default_factory=lambda: {field: 0 for field in EXACT_FIELDS})
     exact_matches: dict[str, int] = field(default_factory=lambda: {field: 0 for field in EXACT_FIELDS})
-    list_scores: dict[str, list[float]] = field(default_factory=lambda: {field: [] for field in LIST_FIELDS})
+    normalized_scores: dict[str, list[float]] = field(default_factory=lambda: {field: [] for field in NORMALIZED_FIELDS})
+    exact_list_scores: dict[str, list[float]] = field(default_factory=lambda: {field: [] for field in LIST_FIELDS})
+    soft_list_scores: dict[str, list[float]] = field(default_factory=lambda: {field: [] for field in LIST_FIELDS})
 
     def add(self, expected: JobPostingLabel, actual: JobPostingLabel) -> None:
         expected_data = expected.model_dump(mode="json")
@@ -69,8 +162,18 @@ class EvalAccumulator:
             if normalize_scalar(expected_data[field_name]) == normalize_scalar(actual_data[field_name]):
                 self.exact_matches[field_name] += 1
 
+        for field_name in NORMALIZED_FIELDS:
+            self.normalized_scores[field_name].append(
+                token_overlap_score(expected_data[field_name], actual_data[field_name])
+            )
+
         for field_name in LIST_FIELDS:
-            self.list_scores[field_name].append(list_f1(expected_data[field_name], actual_data[field_name]))
+            self.exact_list_scores[field_name].append(
+                exact_list_f1(expected_data[field_name], actual_data[field_name])
+            )
+            self.soft_list_scores[field_name].append(
+                soft_list_f1(expected_data[field_name], actual_data[field_name])
+            )
 
     def summary(self) -> dict[str, Any]:
         exact_accuracy = {
@@ -78,15 +181,31 @@ class EvalAccumulator:
             for field_name in EXACT_FIELDS
             if self.exact_totals[field_name]
         }
-        list_f1_scores = {
+        normalized_scores = {
             field_name: sum(scores) / len(scores)
-            for field_name, scores in self.list_scores.items()
+            for field_name, scores in self.normalized_scores.items()
             if scores
         }
-        overall_scores = list(exact_accuracy.values()) + list(list_f1_scores.values())
+        exact_list_f1_scores = {
+            field_name: sum(scores) / len(scores)
+            for field_name, scores in self.exact_list_scores.items()
+            if scores
+        }
+        soft_list_f1_scores = {
+            field_name: sum(scores) / len(scores)
+            for field_name, scores in self.soft_list_scores.items()
+            if scores
+        }
+        overall_scores = (
+            [score for field_name, score in exact_accuracy.items() if field_name not in NORMALIZED_FIELDS]
+            + list(normalized_scores.values())
+            + list(soft_list_f1_scores.values())
+        )
         return {
             "examples": max(self.exact_totals.values(), default=0),
             "overall_mean_score": sum(overall_scores) / len(overall_scores) if overall_scores else 0.0,
             "exact_accuracy": exact_accuracy,
-            "list_f1": list_f1_scores,
+            "normalized_text_score": normalized_scores,
+            "exact_list_f1": exact_list_f1_scores,
+            "soft_list_f1": soft_list_f1_scores,
         }

@@ -43,9 +43,52 @@ def render_summary(summary: dict[str, Any]) -> None:
 
     for field_name, score in summary["exact_accuracy"].items():
         table.add_row(field_name, "exact_accuracy", f"{score:.3f}")
-    for field_name, score in summary["list_f1"].items():
-        table.add_row(field_name, "list_f1", f"{score:.3f}")
+    for field_name, score in summary["normalized_text_score"].items():
+        table.add_row(field_name, "normalized_text_score", f"{score:.3f}")
+    for field_name, score in summary["exact_list_f1"].items():
+        table.add_row(field_name, "exact_list_f1", f"{score:.3f}")
+    for field_name, score in summary["soft_list_f1"].items():
+        table.add_row(field_name, "soft_list_f1", f"{score:.3f}")
     console.print(table)
+
+
+def render_markdown_report(summary: dict[str, Any]) -> str:
+    lines = [
+        "# Structured Extraction Eval Report",
+        "",
+        f"- Run ID: `{summary['run_id']}`",
+        f"- Model: `{summary['model']}`",
+        f"- Examples scored: `{summary['examples']}`",
+        f"- Requested examples: `{summary['requested_examples']}`",
+        f"- Failed examples: `{summary['failed_examples']}`",
+        f"- Overall mean score: `{summary['overall_mean_score']:.3f}`",
+        "",
+        "## Field Metrics",
+        "",
+        "| Field | Metric | Score |",
+        "| --- | --- | ---: |",
+    ]
+
+    for field_name, score in summary["exact_accuracy"].items():
+        lines.append(f"| `{field_name}` | exact accuracy | {score:.3f} |")
+    for field_name, score in summary["normalized_text_score"].items():
+        lines.append(f"| `{field_name}` | normalized text score | {score:.3f} |")
+    for field_name, score in summary["exact_list_f1"].items():
+        lines.append(f"| `{field_name}` | exact list F1 | {score:.3f} |")
+    for field_name, score in summary["soft_list_f1"].items():
+        lines.append(f"| `{field_name}` | soft list F1 | {score:.3f} |")
+
+    lines.extend(
+        [
+            "",
+            "## Notes",
+            "",
+            "- Exact accuracy is intentionally strict and useful for enums, booleans, and numeric fields.",
+            "- Normalized text score uses token overlap for company, title, and location fields.",
+            "- Soft list F1 scores skill lists by best token-overlap matches instead of requiring identical strings.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
 
 
 def parse_args() -> argparse.Namespace:
@@ -116,9 +159,12 @@ def run() -> None:
 
     summary_path = run_dir / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    markdown_path = run_dir / "report.md"
+    markdown_path.write_text(render_markdown_report(summary), encoding="utf-8")
 
     render_summary(summary)
     console.print(f"[green]Wrote report:[/green] {summary_path}")
+    console.print(f"[green]Wrote markdown:[/green] {markdown_path}")
 
 
 if __name__ == "__main__":
