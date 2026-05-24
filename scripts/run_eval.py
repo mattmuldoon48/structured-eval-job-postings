@@ -8,8 +8,14 @@ from typing import Any
 from rich.console import Console
 from rich.table import Table
 
-from structured_eval.evaluate import EvalAccumulator, evaluate_quality_gates, example_mismatches, load_jsonl
-from structured_eval.label_assist import generate_draft_label
+from structured_eval.evaluate import (
+    EvalAccumulator,
+    evaluate_quality_gates,
+    example_mismatches,
+    load_jsonl,
+    summarize_usage,
+)
+from structured_eval.label_assist import generate_draft_label_with_usage
 from structured_eval.llm_client import LLMClient
 from structured_eval.schema import JobPostingLabel
 
@@ -59,6 +65,14 @@ def render_summary(summary: dict[str, Any]) -> None:
             console.print(f"  - {failure}")
     elif summary.get("quality_gates"):
         console.print("[green]Quality gates passed.[/green]")
+
+    if summary.get("usage"):
+        usage = summary["usage"]
+        console.print(
+            "[bold]Usage:[/bold] "
+            f"{usage['total_tokens']} tokens, "
+            f"{usage['average_latency_seconds']:.2f}s avg latency"
+        )
 
 
 def render_markdown_report(summary: dict[str, Any]) -> str:
@@ -117,6 +131,22 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
         else:
             lines.append("- Status: `passed`")
 
+    if summary.get("usage"):
+        usage = summary["usage"]
+        lines.extend(
+            [
+                "",
+                "## Usage",
+                "",
+                f"- Examples with usage: `{usage['examples']}`",
+                f"- Prompt tokens: `{usage['prompt_tokens']}`",
+                f"- Completion tokens: `{usage['completion_tokens']}`",
+                f"- Total tokens: `{usage['total_tokens']}`",
+                f"- Total latency seconds: `{usage['total_latency_seconds']:.2f}`",
+                f"- Average latency seconds: `{usage['average_latency_seconds']:.2f}`",
+            ]
+        )
+
     lines.extend(
         [
             "",
@@ -168,6 +198,7 @@ def run() -> None:
     errors_path = run_dir / "errors.jsonl"
     failures = 0
     sample_mismatches = []
+    usage_records = []
 
     with predictions_path.open("w", encoding="utf-8") as stream:
         for index, record in enumerate(joined, start=1):
@@ -175,7 +206,11 @@ def run() -> None:
             console.print(f"[cyan]Evaluating {job_id}[/cyan] ({index}/{len(joined)})")
             expected = JobPostingLabel.model_validate(record["expected"])
             try:
-                actual = generate_draft_label(record["text"], client=client, prompt_path=prompt_path)
+                actual, llm_result = generate_draft_label_with_usage(
+                    record["text"],
+                    client=client,
+                    prompt_path=prompt_path,
+                )
             except Exception as exc:
                 failures += 1
                 with errors_path.open("a", encoding="utf-8") as error_stream:
@@ -196,12 +231,15 @@ def run() -> None:
             for mismatch in example_mismatches(expected, actual):
                 if len(sample_mismatches) < 12:
                     sample_mismatches.append({"id": job_id, **mismatch})
+            usage = llm_result.usage_dict()
+            usage_records.append(usage)
             stream.write(
                 json.dumps(
                     {
                         "id": job_id,
                         "expected": expected.model_dump(mode="json"),
                         "actual": actual.model_dump(mode="json"),
+                        "usage": usage,
                     },
                     ensure_ascii=False,
                 )
@@ -215,6 +253,7 @@ def run() -> None:
     summary["requested_examples"] = len(joined)
     summary["failed_examples"] = failures
     summary["sample_mismatches"] = sample_mismatches
+    summary["usage"] = summarize_usage(usage_records)
     summary["quality_gates"] = {
         "min_overall": args.min_overall,
         "min_metrics": args.min_metric,

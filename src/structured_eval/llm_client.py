@@ -1,11 +1,29 @@
 import json
 import os
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+@dataclass
+class LLMResult:
+    content: str
+    latency_seconds: float
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+
+    def usage_dict(self) -> dict[str, Any]:
+        return {
+            "latency_seconds": self.latency_seconds,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "total_tokens": self.total_tokens,
+        }
 
 
 @dataclass
@@ -23,6 +41,9 @@ class LLMClient:
         return cls(api_key=api_key, model=model)
 
     def generate(self, messages: List[Dict[str, str]], temperature: float = 0.0) -> str:
+        return self.generate_with_usage(messages, temperature=temperature).content
+
+    def generate_with_usage(self, messages: List[Dict[str, str]], temperature: float = 0.0) -> LLMResult:
         if self.provider != "openai":
             raise NotImplementedError("Only OpenAI provider is implemented")
 
@@ -32,13 +53,22 @@ class LLMClient:
             raise ImportError("openai package is required for LLM calls") from exc
 
         client = OpenAI(api_key=self.api_key)
+        started_at = time.perf_counter()
         response = client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=temperature,
             max_tokens=1000,
         )
-        return response.choices[0].message.content
+        latency_seconds = time.perf_counter() - started_at
+        usage = getattr(response, "usage", None)
+        return LLMResult(
+            content=response.choices[0].message.content,
+            latency_seconds=latency_seconds,
+            prompt_tokens=getattr(usage, "prompt_tokens", None),
+            completion_tokens=getattr(usage, "completion_tokens", None),
+            total_tokens=getattr(usage, "total_tokens", None),
+        )
 
     @staticmethod
     def extract_json(text: str) -> str:

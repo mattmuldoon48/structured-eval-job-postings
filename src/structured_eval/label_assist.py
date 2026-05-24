@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .llm_client import LLMClient
+from .llm_client import LLMClient, LLMResult
 from .schema import JobPostingLabel
 
 
@@ -42,3 +42,26 @@ def generate_draft_label(
     response_text = client.generate(messages)
     parsed = _normalize_response(response_text)
     return JobPostingLabel.model_validate(parsed)
+
+
+def generate_draft_label_with_usage(
+    job_text: str,
+    client: LLMClient | None = None,
+    prompt_path: Path | None = None,
+) -> tuple[JobPostingLabel, LLMResult]:
+    if client is None:
+        client = LLMClient.from_env()
+
+    prompt_template = _load_prompt_template(prompt_path)
+    prompt = prompt_template.replace("{job_text}", job_text)
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a structured data extraction assistant. Return only valid JSON."
+        },
+        {"role": "user", "content": prompt},
+    ]
+
+    result = client.generate_with_usage(messages)
+    parsed = _normalize_response(result.content)
+    return JobPostingLabel.model_validate(parsed), result

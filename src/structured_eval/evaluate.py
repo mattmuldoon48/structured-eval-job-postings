@@ -242,6 +242,31 @@ def evaluate_quality_gates(
     return failures
 
 
+def summarize_usage(records: list[dict[str, Any]]) -> dict[str, Any]:
+    if not records:
+        return {
+            "examples": 0,
+            "total_latency_seconds": 0.0,
+            "average_latency_seconds": 0.0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+        }
+
+    total_latency = sum(record.get("latency_seconds") or 0 for record in records)
+    prompt_tokens = sum(record.get("prompt_tokens") or 0 for record in records)
+    completion_tokens = sum(record.get("completion_tokens") or 0 for record in records)
+    total_tokens = sum(record.get("total_tokens") or 0 for record in records)
+    return {
+        "examples": len(records),
+        "total_latency_seconds": total_latency,
+        "average_latency_seconds": total_latency / len(records),
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+    }
+
+
 @dataclass
 class EvalAccumulator:
     exact_totals: dict[str, int] = field(default_factory=lambda: {field: 0 for field in EXACT_FIELDS})

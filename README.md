@@ -114,6 +114,7 @@ The eval runner:
 - reports normalized text scores for company, title, and location
 - reports exact and soft F1 scores for skill lists
 - can fail the run when quality gates are not met
+- records token usage and latency for each model call
 - writes run artifacts under `reports/runs/`
 
 Latest eval snapshot using `gpt-4.1-mini` and `extract_v2.txt` on 34 examples:
@@ -145,7 +146,7 @@ Prompt comparison:
 
 Future enhancements may include:
 - held-out train/test splits
-- cost and latency tracking
+- cost estimation from token usage
 - CI integration for quality gates
 - support for multiple LLM providers
 

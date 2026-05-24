@@ -5,6 +5,7 @@ from structured_eval.evaluate import (
     example_mismatches,
     parse_metric_gate,
     soft_list_f1,
+    summarize_usage,
     token_overlap_score,
 )
 from structured_eval.schema import JobPostingLabel
@@ -86,3 +87,29 @@ def test_evaluate_quality_gates_passes_when_thresholds_met():
     )
 
     assert failures == []
+
+
+def test_summarize_usage_aggregates_latency_and_tokens():
+    summary = summarize_usage(
+        [
+            {
+                "latency_seconds": 1.5,
+                "prompt_tokens": 100,
+                "completion_tokens": 20,
+                "total_tokens": 120,
+            },
+            {
+                "latency_seconds": 2.5,
+                "prompt_tokens": 200,
+                "completion_tokens": 30,
+                "total_tokens": 230,
+            },
+        ]
+    )
+
+    assert summary["examples"] == 2
+    assert summary["total_latency_seconds"] == 4.0
+    assert summary["average_latency_seconds"] == 2.0
+    assert summary["prompt_tokens"] == 300
+    assert summary["completion_tokens"] == 50
+    assert summary["total_tokens"] == 350
