@@ -46,7 +46,8 @@ OPENAI_MODEL=gpt-4.1-mini
 - `data/splits/job_splits.jsonl` — deterministic dev/test split assignments
 - `prompts/extract_v1.txt` — baseline extraction prompt template
 - `prompts/extract_v2.txt` — conservative extraction prompt template
-- `prompts/extract_v3.txt` — default prompt with explicit seniority rules
+- `prompts/extract_v3.txt` — prompt with explicit seniority rules
+- `prompts/extract_v4.txt` — default prompt with refined skill-list rules
 
 Current dataset:
 
@@ -82,7 +83,7 @@ CI also runs a replay-mode eval quality gate against a small fixture, which exer
 
 ## Evaluation
 
-Run the extraction eval against the labeled dataset with the default prompt, `extract_v3.txt`:
+Run the extraction eval against the labeled dataset with the default prompt, `extract_v4.txt`:
 
 ```bash
 python scripts/run_eval.py
@@ -105,7 +106,7 @@ python scripts/run_eval.py --split test
 Run the standard dev/test benchmark and compare the splits:
 
 ```bash
-python scripts/run_benchmark.py --prompt extract_v3.txt
+python scripts/run_benchmark.py --prompt extract_v4.txt
 ```
 
 Run with quality gates:
@@ -171,23 +172,23 @@ The eval runner:
 - can run a matched dev/test benchmark from one command
 - writes run artifacts under `reports/runs/`
 
-Latest eval snapshot using `gpt-4.1-mini` and `extract_v3.txt` on 34 examples:
+Latest eval snapshot using `gpt-4.1-mini` and `extract_v4.txt` on 34 examples:
 
 | Metric | Score |
 | --- | ---: |
-| Overall mean score | 0.887 |
+| Overall mean score | 0.889 |
 | Company exact accuracy | 0.971 |
 | Title exact accuracy | 0.882 |
-| Seniority exact accuracy | 0.941 |
+| Seniority exact accuracy | 0.882 |
 | Employment type exact accuracy | 0.941 |
-| Remote policy exact accuracy | 0.824 |
+| Remote policy exact accuracy | 0.853 |
 | Salary min/max exact accuracy | 1.000 / 1.000 |
 | Required years exact accuracy | 0.912 |
 | Company normalized text score | 0.994 |
 | Title normalized text score | 0.968 |
-| Location normalized text score | 0.837 |
-| Required skills soft F1 | 0.647 |
-| Nice-to-have skills soft F1 | 0.469 |
+| Location normalized text score | 0.853 |
+| Required skills soft F1 | 0.674 |
+| Nice-to-have skills soft F1 | 0.479 |
 
 Prompt comparison:
 
@@ -196,13 +197,14 @@ Prompt comparison:
 | `extract_v1.txt` | 0.854 | 0.573 | 0.442 | 0.794 |
 | `extract_v2.txt` | 0.864 | 0.661 | 0.473 | 0.824 |
 | `extract_v3.txt` | 0.887 | 0.647 | 0.469 | 0.824 |
+| `extract_v4.txt` | 0.889 | 0.674 | 0.479 | 0.853 |
 
-Latest dev/test benchmark using `gpt-4.1-mini` and `extract_v3.txt`:
+Latest dev/test benchmark using `gpt-4.1-mini` and `extract_v4.txt`:
 
 | Split | Examples | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Seniority accuracy |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| dev | 21 | 0.890 | 0.657 | 0.513 | 0.905 |
-| test | 13 | 0.882 | 0.623 | 0.435 | 0.923 |
+| dev | 21 | 0.892 | 0.698 | 0.525 | 0.857 |
+| test | 13 | 0.884 | 0.627 | 0.413 | 0.923 |
 
 ## What comes next
 

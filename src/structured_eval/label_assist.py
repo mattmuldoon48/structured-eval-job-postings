@@ -6,7 +6,7 @@ from .llm_client import LLMClient, LLMResult
 from .schema import JobPostingLabel
 
 
-PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "extract_v3.txt"
+PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "extract_v4.txt"
 
 
 def _load_prompt_template(prompt_path: Path | None = None) -> str:

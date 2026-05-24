@@ -5,7 +5,7 @@ def test_build_eval_command_includes_matching_split_options():
     command = build_eval_command(
         python_executable="python",
         split="dev",
-        prompt="extract_v3.txt",
+        prompt="extract_v4.txt",
         limit_per_split=2,
         min_overall=0.85,
         min_metrics=["exact_accuracy.remote_policy=0.80"],
@@ -16,7 +16,7 @@ def test_build_eval_command_includes_matching_split_options():
     assert command[:5] == ["python", command[1], "--split", "dev", "--prompt"]
     assert command[1].endswith("scripts/run_eval.py")
     assert command[5:] == [
-        "extract_v3.txt",
+        "extract_v4.txt",
         "--limit",
         "2",
         "--min-overall",

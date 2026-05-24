@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run dev and test extraction benchmarks with matching settings.")
     parser.add_argument(
         "--prompt",
-        default="extract_v3.txt",
+        default="extract_v4.txt",
         help="Prompt file under prompts/ or an explicit path.",
     )
     parser.add_argument(

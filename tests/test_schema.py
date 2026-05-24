@@ -80,5 +80,5 @@ def test_extraction_prompt_template_loads():
 
 
 def test_extraction_prompt_template_loads_custom_path():
-    template = _load_prompt_template(Path("prompts/extract_v3.txt"))
+    template = _load_prompt_template(Path("prompts/extract_v4.txt"))
     assert "{job_text}" in template

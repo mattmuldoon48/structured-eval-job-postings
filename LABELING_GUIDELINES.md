@@ -41,12 +41,19 @@ This document explains how to label each field for structured extraction from jo
   - Use `null` if not stated.
 
 - `required_skills`
-  - List explicit must-have skills from the posting.
-  - Normalize skill phrases into concise terms (e.g. `python`, `machine learning`, `cloud`).
+  - List concrete must-have capabilities from required qualifications and central role responsibilities.
+  - Prefer technologies, frameworks, methods, platforms, tooling, and domain capabilities.
+  - Include a responsibility as a skill only when it names a concrete capability, such as `RAG`, `MLOps`, `AI workflow automation`, or `production AI pipelines`.
+  - Exclude soft skills, generic duties, degrees, years of experience, and broad phrases like `communication`, `collaboration`, `software engineering`, or `stakeholder management` unless the schema has no better field for the signal.
+  - Normalize skill phrases into concise canonical terms, e.g. `Python`, `machine learning`, `AWS`, `RAG`, `LLM agents`.
+  - Aim for the main 5-12 skills rather than every technology mentioned in the posting.
 
 - `nice_to_have_skills`
-  - List optional or preferred skills, not required.
+  - List concrete skills explicitly marked as preferred, nice to have, plus, bonus, desired, or similar.
+  - Include only useful technical, platform, framework, domain, or role-context preferences.
+  - Exclude preferred degrees, vague traits, broad role types, and generic experience phrases unless they are important domain signals.
   - If the posting does not distinguish optional skills, keep this list empty.
+  - Aim for the main 0-8 optional skills rather than every item in a preferred section.
 
 - `security_clearance_required`
   - Use `true` when the posting explicitly requests clearance.

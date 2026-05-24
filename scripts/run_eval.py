@@ -206,7 +206,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--prompt",
-        default="extract_v3.txt",
+        default="extract_v4.txt",
         help="Prompt file under prompts/ or an explicit path.",
     )
     parser.add_argument("--min-overall", type=float, default=None, help="Fail if overall score is below this value.")
