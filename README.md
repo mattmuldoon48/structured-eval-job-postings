@@ -1,5 +1,7 @@
 # structured-eval-job-postings
 
+[![CI](https://github.com/mattmuldoon48/structured-eval-job-postings/actions/workflows/ci.yml/badge.svg)](https://github.com/mattmuldoon48/structured-eval-job-postings/actions/workflows/ci.yml)
+
 A production-style Python LLM evaluation harness for structured extraction from job postings. It combines human-reviewed labels, Pydantic schema validation, prompt versioning, deterministic dev/test splits, and benchmark reports for measuring structured-output quality over time.
 
 Current benchmark: `gpt-4.1-mini` with `extract_v4.txt` scores `0.920` overall on 64 reviewed job postings, with a `0.906` held-out test score.
@@ -53,7 +55,7 @@ Latest dev/test benchmark:
 | dev | 43 | 0.927 | 0.826 | 0.739 | 0.930 |
 | test | 21 | 0.906 | 0.722 | 0.560 | 0.952 |
 
-See [docs/benchmark_snapshot.md](docs/benchmark_snapshot.md) for the current benchmark summary and error analysis.
+See [docs/project_summary.md](docs/project_summary.md) for a reviewer-friendly overview and [docs/benchmark_snapshot.md](docs/benchmark_snapshot.md) for the current benchmark summary and error analysis.
 
 ## Setup
 
