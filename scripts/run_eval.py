@@ -1,5 +1,6 @@
 import argparse
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -7,7 +8,7 @@ from typing import Any
 from rich.console import Console
 from rich.table import Table
 
-from structured_eval.evaluate import EvalAccumulator, example_mismatches, load_jsonl
+from structured_eval.evaluate import EvalAccumulator, evaluate_quality_gates, example_mismatches, load_jsonl
 from structured_eval.label_assist import generate_draft_label
 from structured_eval.llm_client import LLMClient
 from structured_eval.schema import JobPostingLabel
@@ -52,6 +53,13 @@ def render_summary(summary: dict[str, Any]) -> None:
         table.add_row(field_name, "soft_list_f1", f"{score:.3f}")
     console.print(table)
 
+    if summary.get("quality_gate_failures"):
+        console.print("[red]Quality gates failed:[/red]")
+        for failure in summary["quality_gate_failures"]:
+            console.print(f"  - {failure}")
+    elif summary.get("quality_gates"):
+        console.print("[green]Quality gates passed.[/green]")
+
 
 def render_markdown_report(summary: dict[str, Any]) -> str:
     lines = [
@@ -95,6 +103,20 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
                 ]
             )
 
+    if summary.get("quality_gates"):
+        lines.extend(["", "## Quality Gates", ""])
+        lines.append(f"- Minimum overall score: `{summary['quality_gates'].get('min_overall')}`")
+        if summary["quality_gates"].get("min_metrics"):
+            lines.append("- Minimum metric gates:")
+            for gate in summary["quality_gates"]["min_metrics"]:
+                lines.append(f"  - `{gate}`")
+        if summary.get("quality_gate_failures"):
+            lines.append("- Status: `failed`")
+            for failure in summary["quality_gate_failures"]:
+                lines.append(f"  - {failure}")
+        else:
+            lines.append("- Status: `passed`")
+
     lines.extend(
         [
             "",
@@ -115,6 +137,13 @@ def parse_args() -> argparse.Namespace:
         "--prompt",
         default="extract_v2.txt",
         help="Prompt file under prompts/ or an explicit path.",
+    )
+    parser.add_argument("--min-overall", type=float, default=None, help="Fail if overall score is below this value.")
+    parser.add_argument(
+        "--min-metric",
+        action="append",
+        default=[],
+        help="Fail if a metric is below a threshold, e.g. exact_accuracy.remote_policy=0.80.",
     )
     return parser.parse_args()
 
@@ -186,6 +215,15 @@ def run() -> None:
     summary["requested_examples"] = len(joined)
     summary["failed_examples"] = failures
     summary["sample_mismatches"] = sample_mismatches
+    summary["quality_gates"] = {
+        "min_overall": args.min_overall,
+        "min_metrics": args.min_metric,
+    }
+    summary["quality_gate_failures"] = evaluate_quality_gates(
+        summary,
+        min_overall=args.min_overall,
+        metric_gates=args.min_metric,
+    )
     summary["predictions_path"] = str(predictions_path)
     if errors_path.exists():
         summary["errors_path"] = str(errors_path)
@@ -198,6 +236,8 @@ def run() -> None:
     render_summary(summary)
     console.print(f"[green]Wrote report:[/green] {summary_path}")
     console.print(f"[green]Wrote markdown:[/green] {markdown_path}")
+    if summary["quality_gate_failures"]:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -201,6 +201,47 @@ def example_mismatches(expected: JobPostingLabel, actual: JobPostingLabel) -> li
     return mismatches
 
 
+def parse_metric_gate(raw: str) -> tuple[str, str, float]:
+    try:
+        metric_path, threshold_text = raw.split("=", maxsplit=1)
+        metric_group, field_name = metric_path.split(".", maxsplit=1)
+        threshold = float(threshold_text)
+    except ValueError as exc:
+        raise ValueError(
+            "Metric gates must use the form metric_group.field=value, "
+            "for example exact_accuracy.remote_policy=0.80"
+        ) from exc
+    if not 0 <= threshold <= 1:
+        raise ValueError("Metric gate threshold must be between 0 and 1")
+    return metric_group, field_name, threshold
+
+
+def evaluate_quality_gates(
+    summary: dict[str, Any],
+    min_overall: float | None = None,
+    metric_gates: list[str] | None = None,
+) -> list[str]:
+    failures = []
+
+    if min_overall is not None and summary["overall_mean_score"] < min_overall:
+        failures.append(
+            f"overall_mean_score {summary['overall_mean_score']:.3f} is below required {min_overall:.3f}"
+        )
+
+    for raw_gate in metric_gates or []:
+        metric_group, field_name, threshold = parse_metric_gate(raw_gate)
+        try:
+            score = summary[metric_group][field_name]
+        except KeyError as exc:
+            raise ValueError(f"Unknown metric gate target: {metric_group}.{field_name}") from exc
+        if score < threshold:
+            failures.append(
+                f"{metric_group}.{field_name} {score:.3f} is below required {threshold:.3f}"
+            )
+
+    return failures
+
+
 @dataclass
 class EvalAccumulator:
     exact_totals: dict[str, int] = field(default_factory=lambda: {field: 0 for field in EXACT_FIELDS})

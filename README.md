@@ -81,6 +81,15 @@ Run a specific prompt version:
 python scripts/run_eval.py --prompt extract_v2.txt
 ```
 
+Run with quality gates:
+
+```bash
+python scripts/run_eval.py \
+  --min-overall 0.85 \
+  --min-metric exact_accuracy.remote_policy=0.80 \
+  --min-metric soft_list_f1.required_skills=0.60
+```
+
 For a quick smoke test:
 
 ```bash
@@ -95,6 +104,7 @@ The eval runner:
 - reports strict exact-match metrics for enums, numbers, and booleans
 - reports normalized text scores for company, title, and location
 - reports exact and soft F1 scores for skill lists
+- can fail the run when quality gates are not met
 - writes run artifacts under `reports/runs/`
 
 Latest eval snapshot using `gpt-4.1-mini` and `extract_v2.txt` on 34 examples:
@@ -127,7 +137,7 @@ Prompt comparison:
 Future enhancements may include:
 - held-out train/test splits
 - cost and latency tracking
-- prompt-specific regression gates
+- CI integration for quality gates
 - support for multiple LLM providers
 
 ## Notes

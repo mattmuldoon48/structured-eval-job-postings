@@ -1,4 +1,12 @@
-from structured_eval.evaluate import example_mismatches, soft_list_f1, token_overlap_score
+import pytest
+
+from structured_eval.evaluate import (
+    evaluate_quality_gates,
+    example_mismatches,
+    parse_metric_gate,
+    soft_list_f1,
+    token_overlap_score,
+)
 from structured_eval.schema import JobPostingLabel
 
 
@@ -35,3 +43,46 @@ def test_example_mismatches_includes_partial_text_and_skill_misses():
     assert "company" in fields
     assert "location" in fields
     assert "required_skills" in fields
+
+
+def test_parse_metric_gate_returns_metric_group_field_and_threshold():
+    assert parse_metric_gate("exact_accuracy.remote_policy=0.80") == (
+        "exact_accuracy",
+        "remote_policy",
+        0.8,
+    )
+
+
+def test_parse_metric_gate_rejects_invalid_threshold():
+    with pytest.raises(ValueError):
+        parse_metric_gate("exact_accuracy.remote_policy=1.2")
+
+
+def test_evaluate_quality_gates_reports_failures():
+    summary = {
+        "overall_mean_score": 0.84,
+        "exact_accuracy": {"remote_policy": 0.79},
+    }
+
+    failures = evaluate_quality_gates(
+        summary,
+        min_overall=0.85,
+        metric_gates=["exact_accuracy.remote_policy=0.80"],
+    )
+
+    assert len(failures) == 2
+
+
+def test_evaluate_quality_gates_passes_when_thresholds_met():
+    summary = {
+        "overall_mean_score": 0.86,
+        "exact_accuracy": {"remote_policy": 0.82},
+    }
+
+    failures = evaluate_quality_gates(
+        summary,
+        min_overall=0.85,
+        metric_gates=["exact_accuracy.remote_policy=0.80"],
+    )
+
+    assert failures == []
