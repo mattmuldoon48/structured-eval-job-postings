@@ -1,9 +1,11 @@
 import pytest
 
 from structured_eval.evaluate import (
+    compare_summaries,
     estimate_cost,
     evaluate_quality_gates,
     example_mismatches,
+    flatten_summary_metrics,
     parse_metric_gate,
     score_prediction_records,
     soft_list_f1,
@@ -162,3 +164,33 @@ def test_score_prediction_records_scores_replay_records():
     assert summary["overall_mean_score"] == 1.0
     assert mismatches == []
     assert usage_records == [records[0]["usage"]]
+
+
+def test_flatten_summary_metrics_includes_nested_scores_and_usage():
+    metrics = flatten_summary_metrics(
+        {
+            "overall_mean_score": 0.8,
+            "exact_accuracy": {"remote_policy": 0.9},
+            "soft_list_f1": {"required_skills": 0.5},
+            "usage": {"total_tokens": 100, "average_latency_seconds": 1.25},
+            "cost_estimate": {"total_cost_usd": 0.001},
+        }
+    )
+
+    assert metrics["overall_mean_score"] == 0.8
+    assert metrics["exact_accuracy.remote_policy"] == 0.9
+    assert metrics["soft_list_f1.required_skills"] == 0.5
+    assert metrics["usage.total_tokens"] == 100
+    assert metrics["usage.average_latency_seconds"] == 1.25
+    assert metrics["cost.total_cost_usd"] == 0.001
+
+
+def test_compare_summaries_returns_candidate_minus_baseline_delta():
+    comparison = compare_summaries(
+        {"overall_mean_score": 0.8, "exact_accuracy": {"remote_policy": 0.7}},
+        {"overall_mean_score": 0.9, "exact_accuracy": {"remote_policy": 0.6}},
+    )
+    by_metric = {row["metric"]: row for row in comparison}
+
+    assert by_metric["overall_mean_score"]["delta"] == pytest.approx(0.1)
+    assert by_metric["exact_accuracy.remote_policy"]["delta"] == pytest.approx(-0.1)

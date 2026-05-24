@@ -309,6 +309,37 @@ def score_prediction_records(
     return accumulator.summary(), sample_mismatches, usage_records
 
 
+def flatten_summary_metrics(summary: dict[str, Any]) -> dict[str, float]:
+    metrics = {"overall_mean_score": summary.get("overall_mean_score", 0.0)}
+    for group_name in ["exact_accuracy", "normalized_text_score", "exact_list_f1", "soft_list_f1"]:
+        for field_name, score in summary.get(group_name, {}).items():
+            metrics[f"{group_name}.{field_name}"] = score
+    if summary.get("usage"):
+        metrics["usage.total_tokens"] = summary["usage"].get("total_tokens", 0)
+        metrics["usage.average_latency_seconds"] = summary["usage"].get("average_latency_seconds", 0.0)
+    if summary.get("cost_estimate"):
+        metrics["cost.total_cost_usd"] = summary["cost_estimate"].get("total_cost_usd", 0.0)
+    return metrics
+
+
+def compare_summaries(
+    baseline: dict[str, Any],
+    candidate: dict[str, Any],
+) -> list[dict[str, Any]]:
+    baseline_metrics = flatten_summary_metrics(baseline)
+    candidate_metrics = flatten_summary_metrics(candidate)
+    metric_names = sorted(set(baseline_metrics) | set(candidate_metrics))
+    return [
+        {
+            "metric": metric_name,
+            "baseline": baseline_metrics.get(metric_name),
+            "candidate": candidate_metrics.get(metric_name),
+            "delta": (candidate_metrics.get(metric_name) or 0) - (baseline_metrics.get(metric_name) or 0),
+        }
+        for metric_name in metric_names
+    ]
+
+
 @dataclass
 class EvalAccumulator:
     exact_totals: dict[str, int] = field(default_factory=lambda: {field: 0 for field in EXACT_FIELDS})

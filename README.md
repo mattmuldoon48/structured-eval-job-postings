@@ -114,6 +114,14 @@ python scripts/run_eval.py \
   --replay-predictions reports/runs/<run-id>/predictions.jsonl
 ```
 
+Compare two eval runs:
+
+```bash
+python scripts/compare_runs.py \
+  reports/runs/<baseline-run-id>/summary.json \
+  reports/runs/<candidate-run-id>/summary.json
+```
+
 For a quick smoke test:
 
 ```bash
@@ -132,6 +140,7 @@ The eval runner:
 - records token usage and latency for each model call
 - can estimate run cost from explicit per-token pricing inputs
 - can replay saved predictions to regenerate reports without API calls
+- can compare summary metrics across runs
 - writes run artifacts under `reports/runs/`
 
 Latest eval snapshot using `gpt-4.1-mini` and `extract_v2.txt` on 34 examples:
@@ -164,7 +173,7 @@ Prompt comparison:
 Future enhancements may include:
 - held-out train/test splits
 - CI integration for quality gates
-- report comparison utilities across runs
+- persisted benchmark sets for prompt regression testing
 - support for multiple LLM providers
 
 ## Notes
