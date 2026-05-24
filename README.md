@@ -51,9 +51,10 @@ OPENAI_MODEL=gpt-4.1-mini
 
 Current dataset:
 
-- 34 raw job postings
+- 64 raw job postings
 - 34 validated human-reviewed labels
-- deterministic split: 21 dev examples, 13 test examples
+- 30 draft labels generated with `extract_v4.txt` and awaiting human review
+- deterministic split: 43 dev examples, 21 test examples
 - AI/ML, LLM, agentic AI, MLOps, and full-stack AI engineering roles
 
 ## Labeling workflow
@@ -62,6 +63,14 @@ Current dataset:
 2. Run `python scripts/label_next.py`.
 3. Review the LLM draft label, accept it, or edit fields.
 4. Approved labels are appended to `data/labeled/labeled_jobs.jsonl`.
+
+For larger batches, generate draft labels for all currently unlabeled raw jobs:
+
+```bash
+python scripts/label_batch.py
+```
+
+Treat batch labels as draft ground truth until reviewed.
 
 ## Validation
 
