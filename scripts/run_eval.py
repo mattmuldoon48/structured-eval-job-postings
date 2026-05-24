@@ -7,7 +7,7 @@ from typing import Any
 from rich.console import Console
 from rich.table import Table
 
-from structured_eval.evaluate import EvalAccumulator, load_jsonl
+from structured_eval.evaluate import EvalAccumulator, example_mismatches, load_jsonl
 from structured_eval.label_assist import generate_draft_label
 from structured_eval.llm_client import LLMClient
 from structured_eval.schema import JobPostingLabel
@@ -78,6 +78,21 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
     for field_name, score in summary["soft_list_f1"].items():
         lines.append(f"| `{field_name}` | soft list F1 | {score:.3f} |")
 
+    if summary.get("sample_mismatches"):
+        lines.extend(["", "## Sample Mismatches", ""])
+        for item in summary["sample_mismatches"]:
+            lines.extend(
+                [
+                    f"### `{item['id']}` - `{item['field']}`",
+                    "",
+                    f"- Metric: `{item['metric']}`",
+                    f"- Score: `{item['score']:.3f}`",
+                    f"- Expected: `{json.dumps(item['expected'], ensure_ascii=False)}`",
+                    f"- Actual: `{json.dumps(item['actual'], ensure_ascii=False)}`",
+                    "",
+                ]
+            )
+
     lines.extend(
         [
             "",
@@ -111,6 +126,7 @@ def run() -> None:
     predictions_path = run_dir / "predictions.jsonl"
     errors_path = run_dir / "errors.jsonl"
     failures = 0
+    sample_mismatches = []
 
     with predictions_path.open("w", encoding="utf-8") as stream:
         for index, record in enumerate(joined, start=1):
@@ -136,6 +152,9 @@ def run() -> None:
                 console.print(f"[red]Stopping after {job_id}: {type(exc).__name__}: {exc}[/red]")
                 break
             accumulator.add(expected, actual)
+            for mismatch in example_mismatches(expected, actual):
+                if len(sample_mismatches) < 12:
+                    sample_mismatches.append({"id": job_id, **mismatch})
             stream.write(
                 json.dumps(
                     {
@@ -153,6 +172,7 @@ def run() -> None:
     summary["model"] = client.model
     summary["requested_examples"] = len(joined)
     summary["failed_examples"] = failures
+    summary["sample_mismatches"] = sample_mismatches
     summary["predictions_path"] = str(predictions_path)
     if errors_path.exists():
         summary["errors_path"] = str(errors_path)

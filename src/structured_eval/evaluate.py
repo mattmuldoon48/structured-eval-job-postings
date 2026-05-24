@@ -22,6 +22,16 @@ EXACT_FIELDS = [
 ]
 NORMALIZED_FIELDS = ["company", "title", "location"]
 LIST_FIELDS = ["required_skills", "nice_to_have_skills"]
+MISMATCH_EXACT_FIELDS = [
+    "seniority",
+    "employment_type",
+    "remote_policy",
+    "salary_min",
+    "salary_max",
+    "required_years_experience",
+    "security_clearance_required",
+    "sponsorship_available",
+]
 STOPWORDS = {
     "a",
     "an",
@@ -143,6 +153,52 @@ def soft_list_f1(expected: list[str], actual: list[str]) -> float:
     if precision + recall == 0:
         return 0.0
     return 2 * precision * recall / (precision + recall)
+
+
+def example_mismatches(expected: JobPostingLabel, actual: JobPostingLabel) -> list[dict[str, Any]]:
+    expected_data = expected.model_dump(mode="json")
+    actual_data = actual.model_dump(mode="json")
+    mismatches = []
+
+    for field_name in MISMATCH_EXACT_FIELDS:
+        if normalize_scalar(expected_data[field_name]) != normalize_scalar(actual_data[field_name]):
+            mismatches.append(
+                {
+                    "field": field_name,
+                    "metric": "exact",
+                    "score": 0.0,
+                    "expected": expected_data[field_name],
+                    "actual": actual_data[field_name],
+                }
+            )
+
+    for field_name in NORMALIZED_FIELDS:
+        score = token_overlap_score(expected_data[field_name], actual_data[field_name])
+        if score < 1.0:
+            mismatches.append(
+                {
+                    "field": field_name,
+                    "metric": "normalized_text_score",
+                    "score": score,
+                    "expected": expected_data[field_name],
+                    "actual": actual_data[field_name],
+                }
+            )
+
+    for field_name in LIST_FIELDS:
+        score = soft_list_f1(expected_data[field_name], actual_data[field_name])
+        if score < 0.8:
+            mismatches.append(
+                {
+                    "field": field_name,
+                    "metric": "soft_list_f1",
+                    "score": score,
+                    "expected": expected_data[field_name],
+                    "actual": actual_data[field_name],
+                }
+            )
+
+    return mismatches
 
 
 @dataclass
