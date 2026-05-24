@@ -99,6 +99,14 @@ python scripts/run_eval.py \
   --min-metric soft_list_f1.required_skills=0.60
 ```
 
+Estimate run cost from token usage by passing current model rates:
+
+```bash
+python scripts/run_eval.py \
+  --input-cost-per-1m 0.40 \
+  --output-cost-per-1m 1.60
+```
+
 For a quick smoke test:
 
 ```bash
@@ -115,6 +123,7 @@ The eval runner:
 - reports exact and soft F1 scores for skill lists
 - can fail the run when quality gates are not met
 - records token usage and latency for each model call
+- can estimate run cost from explicit per-token pricing inputs
 - writes run artifacts under `reports/runs/`
 
 Latest eval snapshot using `gpt-4.1-mini` and `extract_v2.txt` on 34 examples:
@@ -146,8 +155,8 @@ Prompt comparison:
 
 Future enhancements may include:
 - held-out train/test splits
-- cost estimation from token usage
 - CI integration for quality gates
+- cached/replayable predictions for offline report iteration
 - support for multiple LLM providers
 
 ## Notes

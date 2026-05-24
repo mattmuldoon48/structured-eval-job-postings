@@ -10,6 +10,7 @@ from rich.table import Table
 
 from structured_eval.evaluate import (
     EvalAccumulator,
+    estimate_cost,
     evaluate_quality_gates,
     example_mismatches,
     load_jsonl,
@@ -73,6 +74,9 @@ def render_summary(summary: dict[str, Any]) -> None:
             f"{usage['total_tokens']} tokens, "
             f"{usage['average_latency_seconds']:.2f}s avg latency"
         )
+    if summary.get("cost_estimate"):
+        cost = summary["cost_estimate"]
+        console.print(f"[bold]Estimated cost:[/bold] ${cost['total_cost_usd']:.6f}")
 
 
 def render_markdown_report(summary: dict[str, Any]) -> str:
@@ -146,6 +150,20 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
                 f"- Average latency seconds: `{usage['average_latency_seconds']:.2f}`",
             ]
         )
+    if summary.get("cost_estimate"):
+        cost = summary["cost_estimate"]
+        lines.extend(
+            [
+                "",
+                "## Cost Estimate",
+                "",
+                f"- Input cost per 1M tokens: `${cost['input_cost_per_1m']}`",
+                f"- Output cost per 1M tokens: `${cost['output_cost_per_1m']}`",
+                f"- Input cost USD: `${cost['input_cost_usd']:.6f}`",
+                f"- Output cost USD: `${cost['output_cost_usd']:.6f}`",
+                f"- Total cost USD: `${cost['total_cost_usd']:.6f}`",
+            ]
+        )
 
     lines.extend(
         [
@@ -174,6 +192,18 @@ def parse_args() -> argparse.Namespace:
         action="append",
         default=[],
         help="Fail if a metric is below a threshold, e.g. exact_accuracy.remote_policy=0.80.",
+    )
+    parser.add_argument(
+        "--input-cost-per-1m",
+        type=float,
+        default=None,
+        help="Input token cost in USD per 1M tokens for optional cost estimation.",
+    )
+    parser.add_argument(
+        "--output-cost-per-1m",
+        type=float,
+        default=None,
+        help="Output token cost in USD per 1M tokens for optional cost estimation.",
     )
     return parser.parse_args()
 
@@ -254,6 +284,11 @@ def run() -> None:
     summary["failed_examples"] = failures
     summary["sample_mismatches"] = sample_mismatches
     summary["usage"] = summarize_usage(usage_records)
+    summary["cost_estimate"] = estimate_cost(
+        summary["usage"],
+        input_cost_per_1m=args.input_cost_per_1m,
+        output_cost_per_1m=args.output_cost_per_1m,
+    )
     summary["quality_gates"] = {
         "min_overall": args.min_overall,
         "min_metrics": args.min_metric,

@@ -267,6 +267,27 @@ def summarize_usage(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def estimate_cost(
+    usage: dict[str, Any],
+    input_cost_per_1m: float | None = None,
+    output_cost_per_1m: float | None = None,
+) -> dict[str, Any] | None:
+    if input_cost_per_1m is None or output_cost_per_1m is None:
+        return None
+
+    prompt_tokens = usage.get("prompt_tokens") or 0
+    completion_tokens = usage.get("completion_tokens") or 0
+    input_cost = prompt_tokens / 1_000_000 * input_cost_per_1m
+    output_cost = completion_tokens / 1_000_000 * output_cost_per_1m
+    return {
+        "input_cost_per_1m": input_cost_per_1m,
+        "output_cost_per_1m": output_cost_per_1m,
+        "input_cost_usd": input_cost,
+        "output_cost_usd": output_cost,
+        "total_cost_usd": input_cost + output_cost,
+    }
+
+
 @dataclass
 class EvalAccumulator:
     exact_totals: dict[str, int] = field(default_factory=lambda: {field: 0 for field in EXACT_FIELDS})

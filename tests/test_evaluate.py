@@ -1,6 +1,7 @@
 import pytest
 
 from structured_eval.evaluate import (
+    estimate_cost,
     evaluate_quality_gates,
     example_mismatches,
     parse_metric_gate,
@@ -113,3 +114,19 @@ def test_summarize_usage_aggregates_latency_and_tokens():
     assert summary["prompt_tokens"] == 300
     assert summary["completion_tokens"] == 50
     assert summary["total_tokens"] == 350
+
+
+def test_estimate_cost_returns_none_without_rates():
+    assert estimate_cost({"prompt_tokens": 100, "completion_tokens": 50}) is None
+
+
+def test_estimate_cost_uses_input_and_output_rates():
+    estimate = estimate_cost(
+        {"prompt_tokens": 1_000_000, "completion_tokens": 500_000},
+        input_cost_per_1m=0.4,
+        output_cost_per_1m=1.6,
+    )
+
+    assert estimate["input_cost_usd"] == 0.4
+    assert estimate["output_cost_usd"] == 0.8
+    assert estimate["total_cost_usd"] == pytest.approx(1.2)
