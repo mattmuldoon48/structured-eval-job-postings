@@ -16,6 +16,7 @@ from structured_eval.schema import JobPostingLabel
 ROOT = Path(__file__).resolve().parents[1]
 RAW_PATH = ROOT / "data" / "raw" / "job_postings.jsonl"
 LABELED_PATH = ROOT / "data" / "labeled" / "labeled_jobs.jsonl"
+PROMPTS_DIR = ROOT / "prompts"
 REPORTS_DIR = ROOT / "reports" / "runs"
 console = Console()
 
@@ -58,6 +59,7 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
         "",
         f"- Run ID: `{summary['run_id']}`",
         f"- Model: `{summary['model']}`",
+        f"- Prompt: `{summary['prompt']}`",
         f"- Examples scored: `{summary['examples']}`",
         f"- Requested examples: `{summary['requested_examples']}`",
         f"- Failed examples: `{summary['failed_examples']}`",
@@ -109,6 +111,11 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run structured extraction evals for labeled job postings.")
     parser.add_argument("--limit", type=int, default=None, help="Maximum number of examples to evaluate.")
+    parser.add_argument(
+        "--prompt",
+        default="extract_v2.txt",
+        help="Prompt file under prompts/ or an explicit path.",
+    )
     return parser.parse_args()
 
 
@@ -117,6 +124,11 @@ def run() -> None:
     joined = build_joined_records()
     if args.limit is not None:
         joined = joined[: args.limit]
+    prompt_path = Path(args.prompt)
+    if not prompt_path.is_absolute():
+        prompt_path = PROMPTS_DIR / prompt_path
+    if not prompt_path.exists():
+        raise FileNotFoundError(f"Prompt file not found: {prompt_path}")
     client = LLMClient.from_env()
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = REPORTS_DIR / run_id
@@ -134,7 +146,7 @@ def run() -> None:
             console.print(f"[cyan]Evaluating {job_id}[/cyan] ({index}/{len(joined)})")
             expected = JobPostingLabel.model_validate(record["expected"])
             try:
-                actual = generate_draft_label(record["text"], client=client)
+                actual = generate_draft_label(record["text"], client=client, prompt_path=prompt_path)
             except Exception as exc:
                 failures += 1
                 with errors_path.open("a", encoding="utf-8") as error_stream:
@@ -170,6 +182,7 @@ def run() -> None:
     summary = accumulator.summary()
     summary["run_id"] = run_id
     summary["model"] = client.model
+    summary["prompt"] = str(prompt_path)
     summary["requested_examples"] = len(joined)
     summary["failed_examples"] = failures
     summary["sample_mismatches"] = sample_mismatches

@@ -6,11 +6,11 @@ from .llm_client import LLMClient
 from .schema import JobPostingLabel
 
 
-PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "extract_v1.txt"
+PROMPT_PATH = Path(__file__).resolve().parents[2] / "prompts" / "extract_v2.txt"
 
 
-def _load_prompt_template() -> str:
-    return PROMPT_PATH.read_text(encoding="utf-8")
+def _load_prompt_template(prompt_path: Path | None = None) -> str:
+    return (prompt_path or PROMPT_PATH).read_text(encoding="utf-8")
 
 
 def _normalize_response(raw: str) -> Any:
@@ -21,11 +21,15 @@ def _normalize_response(raw: str) -> Any:
         return json.loads(cleaned)
 
 
-def generate_draft_label(job_text: str, client: LLMClient | None = None) -> JobPostingLabel:
+def generate_draft_label(
+    job_text: str,
+    client: LLMClient | None = None,
+    prompt_path: Path | None = None,
+) -> JobPostingLabel:
     if client is None:
         client = LLMClient.from_env()
 
-    prompt_template = _load_prompt_template()
+    prompt_template = _load_prompt_template(prompt_path)
     prompt = prompt_template.replace("{job_text}", job_text)
     messages = [
         {

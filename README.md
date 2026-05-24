@@ -43,7 +43,8 @@ OPENAI_MODEL=gpt-4.1-mini
 
 - `data/raw/job_postings.jsonl` — raw job posting inputs
 - `data/labeled/labeled_jobs.jsonl` — accepted labels
-- `prompts/extract_v1.txt` — extraction prompt template
+- `prompts/extract_v1.txt` — baseline extraction prompt template
+- `prompts/extract_v2.txt` — more conservative extraction prompt template
 
 Current dataset:
 
@@ -68,10 +69,16 @@ python scripts/validate_labels.py
 
 ## Evaluation
 
-Run the extraction eval against the labeled dataset:
+Run the extraction eval against the labeled dataset with the default prompt, `extract_v2.txt`:
 
 ```bash
 python scripts/run_eval.py
+```
+
+Run a specific prompt version:
+
+```bash
+python scripts/run_eval.py --prompt extract_v2.txt
 ```
 
 For a quick smoke test:
@@ -90,31 +97,37 @@ The eval runner:
 - reports exact and soft F1 scores for skill lists
 - writes run artifacts under `reports/runs/`
 
-Latest eval snapshot using `gpt-4.1-mini` on 34 examples:
+Latest eval snapshot using `gpt-4.1-mini` and `extract_v2.txt` on 34 examples:
 
 | Metric | Score |
 | --- | ---: |
-| Overall mean score | 0.854 |
+| Overall mean score | 0.864 |
 | Company exact accuracy | 0.971 |
 | Title exact accuracy | 0.882 |
-| Seniority exact accuracy | 0.676 |
+| Seniority exact accuracy | 0.588 |
 | Employment type exact accuracy | 0.941 |
-| Remote policy exact accuracy | 0.794 |
+| Remote policy exact accuracy | 0.824 |
 | Salary min/max exact accuracy | 1.000 / 1.000 |
 | Required years exact accuracy | 0.941 |
 | Company normalized text score | 0.994 |
 | Title normalized text score | 0.968 |
-| Location normalized text score | 0.859 |
-| Required skills soft F1 | 0.573 |
-| Nice-to-have skills soft F1 | 0.442 |
+| Location normalized text score | 0.841 |
+| Required skills soft F1 | 0.661 |
+| Nice-to-have skills soft F1 | 0.473 |
+
+Prompt comparison:
+
+| Prompt | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Remote policy accuracy |
+| --- | ---: | ---: | ---: | ---: |
+| `extract_v1.txt` | 0.854 | 0.573 | 0.442 | 0.794 |
+| `extract_v2.txt` | 0.864 | 0.661 | 0.473 | 0.824 |
 
 ## What comes next
 
 Future enhancements may include:
-- prompt version comparison
 - held-out train/test splits
 - cost and latency tracking
-- richer mismatch analysis
+- prompt-specific regression gates
 - support for multiple LLM providers
 
 ## Notes

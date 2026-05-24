@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 from structured_eval.label_assist import _load_prompt_template
@@ -75,4 +76,9 @@ def test_negative_salary_fails():
 
 def test_extraction_prompt_template_loads():
     template = _load_prompt_template()
+    assert "{job_text}" in template
+
+
+def test_extraction_prompt_template_loads_custom_path():
+    template = _load_prompt_template(Path("prompts/extract_v2.txt"))
     assert "{job_text}" in template
