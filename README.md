@@ -93,6 +93,22 @@ OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4.1-mini
 ```
 
+## Quick commands
+
+Run the local non-API checks:
+
+```bash
+make ci
+```
+
+Run the standard live dev/test benchmark:
+
+```bash
+make benchmark
+```
+
+Live labeling and eval commands require an OpenAI API key. CI uses replay-mode scoring where possible so the public checks do not require API credentials or spend tokens.
+
 ## Data layout
 
 - `data/raw/job_postings.jsonl` — raw job posting inputs
@@ -109,6 +125,28 @@ Current dataset:
 - 64 validated reviewed labels
 - deterministic split: 43 dev examples, 21 test examples
 - AI/ML, LLM, agentic AI, MLOps, and full-stack AI engineering roles
+
+Example structured label:
+
+```json
+{
+  "id": "job-001",
+  "company": "example company",
+  "title": "machine learning engineer",
+  "seniority": "senior",
+  "employment_type": "full_time",
+  "location": "Philadelphia, PA",
+  "remote_policy": "hybrid",
+  "salary_min": 120000,
+  "salary_max": 160000,
+  "required_years_experience": 5,
+  "required_skills": ["Python", "AWS", "LLMs", "MLOps"],
+  "nice_to_have_skills": ["LangGraph", "RAG", "Kubernetes"],
+  "security_clearance_required": false,
+  "sponsorship_available": false,
+  "labeling_notes": null
+}
+```
 
 ## Labeling workflow
 
