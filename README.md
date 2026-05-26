@@ -57,6 +57,14 @@ Latest dev/test benchmark:
 
 See [docs/project_summary.md](docs/project_summary.md) for a reviewer-friendly overview and [docs/benchmark_snapshot.md](docs/benchmark_snapshot.md) for the current benchmark summary and error analysis.
 
+## Known limitations and next improvements
+
+- Remote policy is the weakest high-level field because job postings often mix remote, hybrid, onsite, and location-eligibility language.
+- Location extraction still has edge cases around multi-location roles, remote roles with state restrictions, and recruiter-provided locations that conflict with the body text.
+- Required vs nice-to-have skills are difficult to separate when postings list tools, responsibilities, and preferences in the same paragraph.
+- The dataset is intentionally small and inspectable; adding 20-40 more diverse postings would make the held-out benchmark more representative.
+- The next prompt pass should focus on remote policy rules, location normalization, and cleaner skill-list boundaries.
+
 ## Setup
 
 1. Create a virtual environment
