@@ -74,6 +74,28 @@ def test_negative_salary_fails():
         JobPostingLabel.model_validate(sample)
 
 
+def test_salary_max_less_than_salary_min_fails():
+    sample = {
+        "company": "Acme Corp",
+        "title": "Software Engineer",
+        "seniority": "entry",
+        "employment_type": "full_time",
+        "location": "Seattle, WA",
+        "remote_policy": "onsite",
+        "salary_min": 150000,
+        "salary_max": 120000,
+        "required_years_experience": 2,
+        "required_skills": ["python"],
+        "nice_to_have_skills": [],
+        "security_clearance_required": False,
+        "sponsorship_available": None,
+        "labeling_notes": None
+    }
+
+    with pytest.raises(Exception):
+        JobPostingLabel.model_validate(sample)
+
+
 def test_extraction_prompt_template_loads():
     template = _load_prompt_template()
     assert "{job_text}" in template

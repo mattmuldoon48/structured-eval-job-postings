@@ -5,7 +5,7 @@ description = "A lightweight Python evaluation harness for structured extraction
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
-authors = [ {name = "AI Engineer Portfolio"} ]
+authors = [ {name = "Matthew Muldoon"} ]
 dependencies = [
   "pydantic>=2.5",
   "python-dotenv>=1.0",
