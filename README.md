@@ -246,6 +246,8 @@ python scripts/run_eval.py \
   --replay-predictions reports/runs/<run-id>/predictions.jsonl
 ```
 
+Replay mode is the safest default when reviewing scoring changes: it reuses a saved `predictions.jsonl`, reruns schema validation and field scoring locally, and avoids a new model call. Use a live eval only when the prompt or model output path changed.
+
 Compare two eval runs:
 
 ```bash
