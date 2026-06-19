@@ -35,6 +35,12 @@ Current benchmark for `structured-eval-job-postings`.
 | Nice-to-have skills exact F1 | 0.654 |
 | Nice-to-have skills soft F1 | 0.680 |
 
+## Field-level scoring notes
+
+- Exact enum and boolean scores catch schema-compatible but wrong labels.
+- Normalized text scores are more useful than exact text for company, title, and location formatting drift.
+- Soft-list F1 is the main signal for skill-boundary changes because postings often mix requirements, preferences, and responsibilities.
+
 ## Prompt Iteration
 
 Historical comparison on the original 34-example dataset:
