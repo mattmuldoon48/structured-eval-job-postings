@@ -60,3 +60,7 @@ The main remaining mismatch groups are:
 ## Interpretation
 
 The eval harness is now stable enough for prompt regression testing: dev/test scores are close, schema validation catches malformed outputs, and replay mode lets CI exercise scoring without model calls. The highest-value next quality improvement is remote/location policy, not broad prompt rewrites.
+
+## Reading this benchmark
+
+Treat the overall score as a regression signal, not a product-quality claim. A healthy prompt change should preserve schema validity, avoid large dev/test divergence, and improve one of the known weak fields without trading away easier exact-match fields.
