@@ -241,6 +241,8 @@ python scripts/run_eval.py \
   --output-cost-per-1m 1.60
 ```
 
+Cost estimates are advisory run metadata only: they depend on the rates passed at run time and do not change scoring, quality gates, or saved labels.
+
 Replay an existing prediction file without making model calls:
 
 ```bash
