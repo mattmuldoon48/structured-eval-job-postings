@@ -163,6 +163,8 @@ python scripts/label_batch.py
 
 Treat batch labels as draft ground truth until reviewed.
 
+Use `labeling_notes` for ambiguous human decisions that should be visible during later prompt or policy reviews; leave it null when the label is straightforward.
+
 Review draft labels one at a time:
 
 ```bash
