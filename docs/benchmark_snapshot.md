@@ -13,6 +13,8 @@ Current benchmark for `structured-eval-job-postings`.
 - Test score: `0.906`
 - Test gap: `-0.021`
 
+Update this section whenever the dataset, model, or prompt changes so readers can separate quality movement from configuration changes.
+
 ## Field Metrics
 
 | Metric | Score |
