@@ -18,8 +18,13 @@ def test_llm_result_usage_dict_contains_usage_fields():
     }
 
 
-
 def test_extract_json_returns_object_from_prose_response():
     raw = 'Here is the label: {"company": "Acme", "remote_policy": "remote"} Thanks.'
 
     assert LLMClient.extract_json(raw) == '{"company": "Acme", "remote_policy": "remote"}'
+
+
+def test_extract_json_returns_object_from_fenced_response():
+    raw = '```json\n{"company": "Acme", "required_skills": ["python"]}\n```'
+
+    assert LLMClient.extract_json(raw) == '{"company": "Acme", "required_skills": ["python"]}'
