@@ -1,3 +1,5 @@
+import pytest
+
 from structured_eval.llm_client import LLMClient, LLMResult
 
 
@@ -28,3 +30,8 @@ def test_extract_json_returns_object_from_fenced_response():
     raw = '```json\n{"company": "Acme", "required_skills": ["python"]}\n```'
 
     assert LLMClient.extract_json(raw) == '{"company": "Acme", "required_skills": ["python"]}'
+
+
+def test_extract_json_raises_when_response_has_no_object():
+    with pytest.raises(ValueError, match="Could not find JSON object"):
+        LLMClient.extract_json("I could not extract a structured job label.")
