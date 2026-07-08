@@ -1,4 +1,4 @@
-from structured_eval.llm_client import LLMResult
+from structured_eval.llm_client import LLMClient, LLMResult
 
 
 def test_llm_result_usage_dict_contains_usage_fields():
@@ -16,3 +16,10 @@ def test_llm_result_usage_dict_contains_usage_fields():
         "completion_tokens": 5,
         "total_tokens": 15,
     }
+
+
+
+def test_extract_json_returns_object_from_prose_response():
+    raw = 'Here is the label: {"company": "Acme", "remote_policy": "remote"} Thanks.'
+
+    assert LLMClient.extract_json(raw) == '{"company": "Acme", "remote_policy": "remote"}'
