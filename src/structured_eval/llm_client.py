@@ -72,14 +72,17 @@ class LLMClient:
 
     @staticmethod
     def extract_json(text: str) -> str:
-        text = text.strip()
-        if text.startswith("```"):
-            text = text.strip("`\n")
-        start = text.find("{")
-        end = text.rfind("}")
-        if start == -1 or end == -1 or start > end:
-            raise ValueError("Could not find JSON object in model response")
-        return text[start : end + 1]
+        decoder = json.JSONDecoder()
+        for start, character in enumerate(text):
+            if character != "{":
+                continue
+            try:
+                value, end = decoder.raw_decode(text, start)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(value, dict):
+                return text[start:end]
+        raise ValueError("Could not find JSON object in model response")
 
     def generate_json(self, messages: List[Dict[str, str]], temperature: float = 0.0) -> Any:
         raw = self.generate(messages, temperature=temperature)

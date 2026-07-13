@@ -32,6 +32,26 @@ def test_extract_json_returns_object_from_fenced_response():
     assert LLMClient.extract_json(raw) == '{"company": "Acme", "required_skills": ["python"]}'
 
 
+def test_extract_json_returns_first_of_adjacent_objects():
+    raw = '{"company": "First"}{"company": "Second"}'
+
+    assert LLMClient.extract_json(raw) == '{"company": "First"}'
+
+
+def test_extract_json_skips_invalid_brace_prose_before_valid_object():
+    raw = 'Use {company name} as context, then return {"company": "Acme"}.'
+
+    assert LLMClient.extract_json(raw) == '{"company": "Acme"}'
+
+
+def test_extract_json_handles_nested_and_string_braces():
+    raw = 'Result: {"metadata": {"note": "keep {these} braces"}, "valid": true} trailing'
+
+    assert LLMClient.extract_json(raw) == (
+        '{"metadata": {"note": "keep {these} braces"}, "valid": true}'
+    )
+
+
 def test_extract_json_raises_when_response_has_no_object():
     with pytest.raises(ValueError, match="Could not find JSON object"):
         LLMClient.extract_json("I could not extract a structured job label.")
