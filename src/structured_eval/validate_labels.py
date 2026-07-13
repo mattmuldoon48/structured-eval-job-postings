@@ -13,7 +13,8 @@ def validate_label_file(path: Path) -> list[tuple[int, str]]:
                 continue
             try:
                 example = json.loads(raw)
-                JobPostingLabel.model_validate(example)
+                label = {key: value for key, value in example.items() if key != "id"}
+                JobPostingLabel.model_validate(label)
             except Exception as exc:
                 errors.append((index, str(exc)))
     return errors

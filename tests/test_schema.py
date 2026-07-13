@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 from structured_eval.label_assist import _load_prompt_template
 from structured_eval.schema import JobPostingLabel, Seniority
+from structured_eval.validate_labels import validate_label_file
 
 
 def test_valid_sample_label_passes():
@@ -38,6 +39,21 @@ def test_unknown_field_fails():
 
     with pytest.raises(ValidationError, match="employment_typ"):
         JobPostingLabel.model_validate(sample)
+
+
+def test_label_file_allows_record_id_and_rejects_other_unknown_fields(tmp_path):
+    path = tmp_path / "labels.jsonl"
+    path.write_text(
+        '{"id":"job-001","company":"Acme"}\n'
+        '{"id":"job-002","employment_typ":"full_time"}\n',
+        encoding="utf-8",
+    )
+
+    errors = validate_label_file(path)
+
+    assert len(errors) == 1
+    assert errors[0][0] == 2
+    assert "employment_typ" in errors[0][1]
 
 
 def test_invalid_enum_fails():
