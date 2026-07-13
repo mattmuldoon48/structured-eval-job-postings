@@ -1,7 +1,7 @@
-import json
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 from structured_eval.label_assist import _load_prompt_template
 from structured_eval.schema import JobPostingLabel, Seniority
 
@@ -28,6 +28,16 @@ def test_valid_sample_label_passes():
     assert label.company == "Acme Corp"
     assert label.seniority == Seniority.senior
     assert label.salary_min == 130000
+
+
+def test_unknown_field_fails():
+    sample = {
+        "company": "Acme Corp",
+        "employment_typ": "full_time",
+    }
+
+    with pytest.raises(ValidationError, match="employment_typ"):
+        JobPostingLabel.model_validate(sample)
 
 
 def test_invalid_enum_fails():

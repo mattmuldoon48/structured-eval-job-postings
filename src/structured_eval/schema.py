@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Seniority(str, Enum):
@@ -33,6 +33,7 @@ class RemotePolicy(str, Enum):
 
 
 class JobPostingLabel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     company: Optional[str] = Field(default=None)
     title: Optional[str] = Field(default=None)
     seniority: Seniority = Field(default=Seniority.unknown)
