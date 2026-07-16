@@ -1,10 +1,26 @@
 from collections import Counter
-from typing import Any
+from typing import Any, TypeGuard
+
+
+def _is_valid_record_id(record_id: Any) -> TypeGuard[str]:
+    return isinstance(record_id, str) and bool(record_id.strip())
+
+
+def _valid_ids(records: list[dict[str, Any]]) -> set[str]:
+    return {
+        record_id
+        for record in records
+        if _is_valid_record_id(record_id := record.get("id"))
+    }
 
 
 def duplicate_ids(records: list[dict[str, Any]]) -> list[str]:
-    counts = Counter(record.get("id") for record in records)
-    return sorted(record_id for record_id, count in counts.items() if record_id and count > 1)
+    counts = Counter(
+        record_id
+        for record in records
+        if _is_valid_record_id(record_id := record.get("id"))
+    )
+    return sorted(record_id for record_id, count in counts.items() if count > 1)
 
 
 def validate_dataset_integrity(
@@ -13,15 +29,30 @@ def validate_dataset_integrity(
     split_records: list[dict[str, Any]],
 ) -> list[str]:
     failures = []
-    raw_ids = {record.get("id") for record in raw_records}
-    labeled_ids = {record.get("id") for record in labeled_records}
-    split_ids = {record.get("id") for record in split_records}
+    raw_ids = _valid_ids(raw_records)
+    labeled_ids = _valid_ids(labeled_records)
+    split_ids = _valid_ids(split_records)
 
     for name, records in [
         ("raw", raw_records),
         ("labeled", labeled_records),
         ("split", split_records),
     ]:
+        invalid_positions = [
+            str(position)
+            for position, record in enumerate(records, start=1)
+            if not _is_valid_record_id(record.get("id"))
+        ]
+        if invalid_positions:
+            location = (
+                f"position {invalid_positions[0]}"
+                if len(invalid_positions) == 1
+                else f"positions {', '.join(invalid_positions)}"
+            )
+            failures.append(
+                f"{name} records contain invalid ids at {location}; "
+                "ids must be non-empty, non-whitespace strings"
+            )
         duplicates = duplicate_ids(records)
         if duplicates:
             failures.append(f"{name} records contain duplicate ids: {', '.join(duplicates)}")
@@ -43,9 +74,10 @@ def validate_dataset_integrity(
         failures.append(f"split assignments without raw records: {', '.join(orphan_splits)}")
 
     draft_labels = sorted(
-        record["id"]
+        record_id
         for record in labeled_records
-        if "needs human review" in str(record.get("labeling_notes") or "")
+        if _is_valid_record_id(record_id := record.get("id"))
+        and "needs human review" in str(record.get("labeling_notes") or "")
     )
     if draft_labels:
         failures.append(f"labels still marked as draft: {', '.join(draft_labels)}")
