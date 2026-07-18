@@ -1,3 +1,4 @@
+import math
 import hashlib
 import json
 from pathlib import Path
@@ -8,6 +9,8 @@ DEFAULT_SPLIT_RATIOS = {"dev": 0.7, "test": 0.3}
 
 
 def normalized_ratios(ratios: dict[str, float]) -> dict[str, float]:
+    if any(not math.isfinite(value) or value < 0 for value in ratios.values()):
+        raise ValueError("Split ratios must be finite and non-negative")
     total = sum(ratios.values())
     if total <= 0:
         raise ValueError("Split ratios must sum to a positive value")

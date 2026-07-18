@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from structured_eval.splits import assign_split, build_split_records, load_split_map, normalized_ratios
 
 
@@ -12,6 +14,12 @@ def test_normalized_ratios_sum_to_one():
 
     assert ratios["dev"] == 0.7
     assert ratios["test"] == 0.3
+
+
+@pytest.mark.parametrize("invalid_ratio", [-0.1, float("inf"), float("nan")])
+def test_normalized_ratios_reject_invalid_values(invalid_ratio):
+    with pytest.raises(ValueError, match="Split ratios must be finite and non-negative"):
+        normalized_ratios({"dev": 1.0, "test": invalid_ratio})
 
 
 def test_build_split_records_includes_ids_and_splits():
