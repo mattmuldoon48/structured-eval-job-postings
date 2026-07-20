@@ -291,6 +291,17 @@ The eval runner:
 - can run a matched dev/test benchmark from one command
 - writes run artifacts under `reports/runs/`
 
+### Run artifact guide
+
+Each `reports/runs/<run-id>/` directory contains:
+
+- `summary.json` — machine-readable aggregate metrics, run configuration, usage, cost estimate, sample mismatches, and quality-gate results
+- `report.md` — the same run summarized for human review
+- `predictions.jsonl` — one expected/predicted record per completed example; use this file for replay and mismatch analysis
+- `errors.jsonl` — written only when a live run stops on a model, parsing, or validation exception
+
+Check `failed_examples` in `summary.json` and review `errors.jsonl` before treating a live run as complete. A partial run can still contain valid predictions for examples completed before the failure.
+
 Historical prompt comparison on the original 34-example set:
 
 | Prompt | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Remote policy accuracy |
