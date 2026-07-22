@@ -221,6 +221,9 @@ def evaluate_quality_gates(
     min_overall: float | None = None,
     metric_gates: list[str] | None = None,
 ) -> list[str]:
+    if min_overall is not None and not 0 <= min_overall <= 1:
+        raise ValueError("Overall quality gate threshold must be between 0 and 1")
+
     failures = []
 
     if min_overall is not None and summary["overall_mean_score"] < min_overall:

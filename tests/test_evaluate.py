@@ -63,6 +63,15 @@ def test_parse_metric_gate_rejects_invalid_threshold():
         parse_metric_gate("exact_accuracy.remote_policy=1.2")
 
 
+@pytest.mark.parametrize("threshold", [-0.1, 1.1, float("nan")])
+def test_evaluate_quality_gates_rejects_invalid_overall_threshold(threshold):
+    with pytest.raises(
+        ValueError,
+        match="Overall quality gate threshold must be between 0 and 1",
+    ):
+        evaluate_quality_gates({"overall_mean_score": 0.8}, min_overall=threshold)
+
+
 def test_evaluate_quality_gates_reports_failures():
     summary = {
         "overall_mean_score": 0.84,
