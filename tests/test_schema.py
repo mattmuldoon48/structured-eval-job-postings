@@ -56,6 +56,15 @@ def test_label_file_allows_record_id_and_rejects_other_unknown_fields(tmp_path):
     assert "employment_typ" in errors[0][1]
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("required_skills", [""]), ("nice_to_have_skills", ["   "])],
+)
+def test_blank_skill_entries_fail(field, value):
+    with pytest.raises(ValidationError, match="Skill entries must not be blank"):
+        JobPostingLabel.model_validate({field: value})
+
+
 def test_invalid_enum_fails():
     sample = {
         "company": "Acme Corp",

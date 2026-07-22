@@ -49,6 +49,12 @@ class JobPostingLabel(BaseModel):
     sponsorship_available: Optional[bool] = Field(default=None)
     labeling_notes: Optional[str] = Field(default=None)
 
+    @field_validator("required_skills", "nice_to_have_skills")
+    def skill_entries_must_not_be_blank(cls, value):
+        if any(not skill.strip() for skill in value):
+            raise ValueError("Skill entries must not be blank")
+        return value
+
     @field_validator("salary_max")
     def salary_max_not_less_than_min(cls, value, info):
         if value is not None:
