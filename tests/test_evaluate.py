@@ -132,6 +132,16 @@ def test_estimate_cost_returns_none_without_rates():
     assert estimate_cost({"prompt_tokens": 100, "completion_tokens": 50}) is None
 
 
+@pytest.mark.parametrize("invalid_rate", [-0.1, float("inf"), float("nan")])
+def test_estimate_cost_rejects_invalid_rates(invalid_rate):
+    with pytest.raises(ValueError, match="Cost rates must be finite and non-negative"):
+        estimate_cost(
+            {"prompt_tokens": 100, "completion_tokens": 50},
+            input_cost_per_1m=invalid_rate,
+            output_cost_per_1m=1.0,
+        )
+
+
 def test_estimate_cost_uses_input_and_output_rates():
     estimate = estimate_cost(
         {"prompt_tokens": 1_000_000, "completion_tokens": 500_000},

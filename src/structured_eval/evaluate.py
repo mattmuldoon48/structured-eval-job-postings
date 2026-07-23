@@ -1,4 +1,5 @@
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -277,6 +278,10 @@ def estimate_cost(
 ) -> dict[str, Any] | None:
     if input_cost_per_1m is None or output_cost_per_1m is None:
         return None
+    rates = (input_cost_per_1m, output_cost_per_1m)
+    if any(not math.isfinite(rate) or rate < 0 for rate in rates):
+        raise ValueError("Cost rates must be finite and non-negative")
+
 
     prompt_tokens = usage.get("prompt_tokens") or 0
     completion_tokens = usage.get("completion_tokens") or 0
