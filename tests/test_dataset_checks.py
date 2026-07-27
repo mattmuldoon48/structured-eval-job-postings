@@ -100,3 +100,15 @@ def test_validate_dataset_integrity_reports_aligned_invalid_ids():
         )
     assert not any("missing" in failure for failure in failures)
     assert not any("without raw records" in failure for failure in failures)
+
+
+def test_validate_dataset_integrity_detects_case_insensitive_draft_marker():
+    failures = validate_dataset_integrity(
+        raw_records=[{"id": "job-001"}],
+        labeled_records=[
+            {"id": "job-001", "labeling_notes": "Needs Human Review"},
+        ],
+        split_records=[{"id": "job-001", "split": "dev"}],
+    )
+
+    assert failures == ["labels still marked as draft: job-001"]

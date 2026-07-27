@@ -77,7 +77,7 @@ def validate_dataset_integrity(
         record_id
         for record in labeled_records
         if _is_valid_record_id(record_id := record.get("id"))
-        and "needs human review" in str(record.get("labeling_notes") or "")
+        and "needs human review" in str(record.get("labeling_notes") or "").lower()
     )
     if draft_labels:
         failures.append(f"labels still marked as draft: {', '.join(draft_labels)}")
