@@ -13,6 +13,9 @@ def validate_label_file(path: Path) -> list[tuple[int, str]]:
                 continue
             try:
                 example = json.loads(raw)
+                record_id = example.get("id")
+                if not isinstance(record_id, str) or not record_id.strip():
+                    raise ValueError("record id must be a non-empty, non-whitespace string")
                 label = {key: value for key, value in example.items() if key != "id"}
                 JobPostingLabel.model_validate(label)
             except Exception as exc:

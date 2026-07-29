@@ -139,3 +139,18 @@ def test_extraction_prompt_template_loads():
 def test_extraction_prompt_template_loads_custom_path():
     template = _load_prompt_template(Path("prompts/extract_v4.txt"))
     assert "{job_text}" in template
+
+
+@pytest.mark.parametrize(
+    "record",
+    ['{"company":"Acme"}', '{"id":"   ","company":"Acme"}'],
+)
+def test_label_file_requires_nonblank_record_ids(tmp_path, record):
+    path = tmp_path / "labels.jsonl"
+    path.write_text(record + "\n", encoding="utf-8")
+
+    errors = validate_label_file(path)
+
+    assert errors == [
+        (1, "record id must be a non-empty, non-whitespace string"),
+    ]
