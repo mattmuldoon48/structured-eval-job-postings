@@ -154,3 +154,18 @@ def test_label_file_requires_nonblank_record_ids(tmp_path, record):
     assert errors == [
         (1, "record id must be a non-empty, non-whitespace string"),
     ]
+
+
+def test_label_file_rejects_duplicate_record_ids(tmp_path):
+    path = tmp_path / "labels.jsonl"
+    path.write_text(
+        '{"id":"job-001","company":"Acme"}\n'
+        '{"id":"job-001","company":"Beta"}\n',
+        encoding="utf-8",
+    )
+
+    errors = validate_label_file(path)
+
+    assert errors == [
+        (2, "duplicate record id 'job-001'; first seen on line 1"),
+    ]
