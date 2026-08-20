@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Seniority(str, Enum):
@@ -54,6 +54,18 @@ class JobPostingLabel(BaseModel):
         if any(not skill.strip() for skill in value):
             raise ValueError("Skill entries must not be blank")
         return value
+
+    @model_validator(mode="after")
+    def skill_categories_must_not_overlap(self):
+        required = {skill.strip().casefold() for skill in self.required_skills}
+        nice_to_have = {skill.strip().casefold() for skill in self.nice_to_have_skills}
+        overlap = sorted(required & nice_to_have)
+        if overlap:
+            raise ValueError(
+                "required_skills and nice_to_have_skills must not overlap: "
+                + ", ".join(overlap)
+            )
+        return self
 
     @field_validator("salary_max")
     def salary_max_not_less_than_min(cls, value, info):

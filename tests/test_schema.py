@@ -65,6 +65,16 @@ def test_blank_skill_entries_fail(field, value):
         JobPostingLabel.model_validate({field: value})
 
 
+def test_skill_categories_must_not_overlap():
+    with pytest.raises(ValidationError, match="must not overlap: python"):
+        JobPostingLabel.model_validate(
+            {
+                "required_skills": ["Python"],
+                "nice_to_have_skills": [" python "],
+            }
+        )
+
+
 def test_invalid_enum_fails():
     sample = {
         "company": "Acme Corp",
