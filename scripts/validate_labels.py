@@ -12,7 +12,7 @@ console = Console()
 def run() -> None:
     if not LABELED_PATH.exists():
         console.print(f"[yellow]No labeled data found at {LABELED_PATH}.[/yellow]")
-        return
+        sys.exit(1)
 
     errors = validate_label_file(LABELED_PATH)
     if not errors:

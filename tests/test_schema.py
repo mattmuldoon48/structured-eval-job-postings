@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
+import scripts.validate_labels as validate_labels_command
 from structured_eval.label_assist import _load_prompt_template
 from structured_eval.schema import JobPostingLabel, Seniority
 from structured_eval.validate_labels import validate_label_file
@@ -179,3 +180,19 @@ def test_label_file_rejects_duplicate_record_ids(tmp_path):
     assert errors == [
         (2, "duplicate record id 'job-001'; first seen on line 1"),
     ]
+
+
+def test_validate_label_command_fails_when_dataset_is_missing(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        validate_labels_command,
+        "LABELED_PATH",
+        tmp_path / "missing.jsonl",
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        validate_labels_command.run()
+
+    assert exc_info.value.code == 1
