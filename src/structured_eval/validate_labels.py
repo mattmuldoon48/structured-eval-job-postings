@@ -7,11 +7,13 @@ from .schema import JobPostingLabel
 def validate_label_file(path: Path) -> list[tuple[int, str]]:
     errors: list[tuple[int, str]] = []
     seen_ids: dict[str, int] = {}
+    record_count = 0
     with path.open("r", encoding="utf-8") as stream:
         for index, raw in enumerate(stream, start=1):
             raw = raw.strip()
             if not raw:
                 continue
+            record_count += 1
             try:
                 example = json.loads(raw)
                 record_id = example.get("id")
@@ -27,6 +29,8 @@ def validate_label_file(path: Path) -> list[tuple[int, str]]:
                 seen_ids[record_id] = index
             except Exception as exc:
                 errors.append((index, str(exc)))
+    if record_count == 0:
+        errors.append((1, "label file contains no labeled records"))
     return errors
 
 

@@ -196,3 +196,12 @@ def test_validate_label_command_fails_when_dataset_is_missing(
         validate_labels_command.run()
 
     assert exc_info.value.code == 1
+
+
+def test_label_file_rejects_empty_dataset(tmp_path):
+    path = tmp_path / "labels.jsonl"
+    path.write_text(" \n\n", encoding="utf-8")
+
+    assert validate_label_file(path) == [
+        (1, "label file contains no labeled records"),
+    ]
