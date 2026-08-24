@@ -42,7 +42,11 @@ class JobPostingLabel(BaseModel):
     remote_policy: RemotePolicy = Field(default=RemotePolicy.unknown)
     salary_min: Optional[int] = Field(default=None, ge=0)
     salary_max: Optional[int] = Field(default=None, ge=0)
-    required_years_experience: Optional[float] = Field(default=None, ge=0)
+    required_years_experience: Optional[float] = Field(
+        default=None,
+        ge=0,
+        allow_inf_nan=False,
+    )
     required_skills: List[str] = Field(default_factory=list)
     nice_to_have_skills: List[str] = Field(default_factory=list)
     security_clearance_required: bool = Field(default=False)

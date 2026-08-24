@@ -205,3 +205,12 @@ def test_label_file_rejects_empty_dataset(tmp_path):
     assert validate_label_file(path) == [
         (1, "label file contains no labeled records"),
     ]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [float("nan"), float("inf"), float("-inf")],
+)
+def test_required_experience_rejects_non_finite_values(value):
+    with pytest.raises(ValidationError):
+        JobPostingLabel(required_years_experience=value)
