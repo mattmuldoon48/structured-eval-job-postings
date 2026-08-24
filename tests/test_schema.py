@@ -214,3 +214,9 @@ def test_label_file_rejects_empty_dataset(tmp_path):
 def test_required_experience_rejects_non_finite_values(value):
     with pytest.raises(ValidationError):
         JobPostingLabel(required_years_experience=value)
+
+
+@pytest.mark.parametrize("field_name", ["company", "title", "location"])
+def test_optional_text_fields_reject_whitespace(field_name):
+    with pytest.raises(ValidationError, match=f"{field_name} must not be blank"):
+        JobPostingLabel(**{field_name: "   "})

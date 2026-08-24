@@ -53,6 +53,12 @@ class JobPostingLabel(BaseModel):
     sponsorship_available: Optional[bool] = Field(default=None)
     labeling_notes: Optional[str] = Field(default=None)
 
+    @field_validator("company", "title", "location")
+    def optional_text_must_not_be_blank(cls, value, info):
+        if value is not None and not value.strip():
+            raise ValueError(f"{info.field_name} must not be blank; use null when unknown")
+        return value
+
     @field_validator("required_skills", "nice_to_have_skills")
     def skill_entries_must_not_be_blank(cls, value):
         if any(not skill.strip() for skill in value):
