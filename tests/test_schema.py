@@ -220,3 +220,10 @@ def test_required_experience_rejects_non_finite_values(value):
 def test_optional_text_fields_reject_whitespace(field_name):
     with pytest.raises(ValidationError, match=f"{field_name} must not be blank"):
         JobPostingLabel(**{field_name: "   "})
+
+
+@pytest.mark.parametrize("field_name", ["salary_min", "salary_max"])
+@pytest.mark.parametrize("value", [False, True])
+def test_salary_fields_reject_booleans(field_name, value):
+    with pytest.raises(ValidationError, match="must be integers, not booleans"):
+        JobPostingLabel(**{field_name: value})

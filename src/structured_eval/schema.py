@@ -53,6 +53,12 @@ class JobPostingLabel(BaseModel):
     sponsorship_available: Optional[bool] = Field(default=None)
     labeling_notes: Optional[str] = Field(default=None)
 
+    @field_validator("salary_min", "salary_max", mode="before")
+    def salary_values_must_not_be_boolean(cls, value):
+        if isinstance(value, bool):
+            raise ValueError("Salary values must be integers, not booleans")
+        return value
+
     @field_validator("company", "title", "location")
     def optional_text_must_not_be_blank(cls, value, info):
         if value is not None and not value.strip():
