@@ -227,3 +227,15 @@ def test_optional_text_fields_reject_whitespace(field_name):
 def test_salary_fields_reject_booleans(field_name, value):
     with pytest.raises(ValidationError, match="must be integers, not booleans"):
         JobPostingLabel(**{field_name: value})
+
+
+@pytest.mark.parametrize(
+    "field_name",
+    ["required_skills", "nice_to_have_skills"],
+)
+def test_skill_categories_reject_normalized_duplicates(field_name):
+    with pytest.raises(
+        ValidationError,
+        match=f"{field_name} must not contain duplicate skills: python",
+    ):
+        JobPostingLabel(**{field_name: ["Python", " python "]})

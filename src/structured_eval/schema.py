@@ -1,3 +1,4 @@
+from collections import Counter
 from enum import Enum
 from typing import List, Optional
 
@@ -66,9 +67,16 @@ class JobPostingLabel(BaseModel):
         return value
 
     @field_validator("required_skills", "nice_to_have_skills")
-    def skill_entries_must_not_be_blank(cls, value):
+    def skill_entries_must_not_be_blank_or_duplicate(cls, value, info):
         if any(not skill.strip() for skill in value):
             raise ValueError("Skill entries must not be blank")
+        counts = Counter(skill.strip().casefold() for skill in value)
+        duplicates = sorted(skill for skill, count in counts.items() if count > 1)
+        if duplicates:
+            raise ValueError(
+                f"{info.field_name} must not contain duplicate skills: "
+                + ", ".join(duplicates)
+            )
         return value
 
     @model_validator(mode="after")
