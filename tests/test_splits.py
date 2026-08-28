@@ -34,3 +34,18 @@ def test_load_split_map(tmp_path: Path):
     path.write_text('{"id": "job-001", "split": "dev"}\n', encoding="utf-8")
 
     assert load_split_map(path) == {"job-001": "dev"}
+
+
+def test_load_split_map_rejects_duplicate_ids(tmp_path: Path):
+    path = tmp_path / "splits.jsonl"
+    path.write_text(
+        '{"id": "job-001", "split": "dev"}\n'
+        '{"id": "job-001", "split": "test"}\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Duplicate split ID 'job-001' on line 2; first seen on line 1",
+    ):
+        load_split_map(path)

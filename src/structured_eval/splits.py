@@ -36,8 +36,19 @@ def build_split_records(records: list[dict[str, Any]], seed: str = "job-posting-
 
 
 def load_split_map(path: Path) -> dict[str, str]:
+    split_map: dict[str, str] = {}
+    first_seen_lines: dict[str, int] = {}
     with path.open("r", encoding="utf-8") as stream:
-        return {
-            record["id"]: record["split"]
-            for record in (json.loads(line) for line in stream if line.strip())
-        }
+        for line_number, line in enumerate(stream, start=1):
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            record_id = record["id"]
+            if record_id in first_seen_lines:
+                raise ValueError(
+                    f"Duplicate split ID {record_id!r} on line {line_number}; "
+                    f"first seen on line {first_seen_lines[record_id]}"
+                )
+            first_seen_lines[record_id] = line_number
+            split_map[record_id] = record["split"]
+    return split_map
