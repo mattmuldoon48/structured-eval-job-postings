@@ -60,6 +60,12 @@ class JobPostingLabel(BaseModel):
             raise ValueError("Salary values must be integers, not booleans")
         return value
 
+    @field_validator("required_years_experience", mode="before")
+    def required_experience_must_not_be_boolean(cls, value):
+        if isinstance(value, bool):
+            raise ValueError("required_years_experience must be numeric, not boolean")
+        return value
+
     @field_validator("company", "title", "location")
     def optional_text_must_not_be_blank(cls, value, info):
         if value is not None and not value.strip():

@@ -216,6 +216,12 @@ def test_required_experience_rejects_non_finite_values(value):
         JobPostingLabel(required_years_experience=value)
 
 
+@pytest.mark.parametrize("value", [False, True])
+def test_required_experience_rejects_booleans(value):
+    with pytest.raises(ValidationError, match="must be numeric, not boolean"):
+        JobPostingLabel(required_years_experience=value)
+
+
 @pytest.mark.parametrize("field_name", ["company", "title", "location"])
 def test_optional_text_fields_reject_whitespace(field_name):
     with pytest.raises(ValidationError, match=f"{field_name} must not be blank"):
