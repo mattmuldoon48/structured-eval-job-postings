@@ -250,7 +250,9 @@ python scripts/run_eval.py \
   --replay-predictions reports/runs/<run-id>/predictions.jsonl
 ```
 
-Replay mode is the safest default when reviewing scoring changes: it reuses a saved `predictions.jsonl`, reruns schema validation and field scoring locally, and avoids a new model call. Use a live eval only when the prompt or model output path changed.
+Replay mode is the safest default when reviewing scoring changes: it validates and re-scores the saved `expected` and `actual` labels locally without making model calls. It does not reload ground truth from `data/labeled/labeled_jobs.jsonl`, so label corrections made after the original run are not reflected in replay scores. Use a live eval to measure prompt or model-output changes.
+
+Likewise, `--split` filters the saved records' `split` field rather than consulting current split assignments. A full-dataset live run saves `split: null`; replay that file without `--split`, or use predictions from a split-specific run.
 
 Compare two eval runs:
 
