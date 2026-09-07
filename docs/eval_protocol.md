@@ -32,6 +32,8 @@ The historical prompt table in the README is useful for context, but the reposit
 
 Exact list F1 is reported for skill lists but is not included in `overall_mean_score`; the overall score uses soft list F1 for those fields.
 
+Field metrics are averaged over scored examples; skill-list F1 is computed per example and then averaged, not pooled across all skills in the dataset. Matching `null` values receive full credit for scored nullable scalar fields, as do two empty skill lists; a populated value or list compared with an absent one receives zero for that field. These examples remain in the averages, so high scores on sparse fields can reflect agreement that information is absent rather than successful extraction of populated values.
+
 ## Test split limitations
 
 The test split has 21 examples. That is enough to catch large regressions and show the evaluation loop, but it is not large enough to make high-confidence claims about production performance across all job-posting formats, locations, industries, and compensation styles.
