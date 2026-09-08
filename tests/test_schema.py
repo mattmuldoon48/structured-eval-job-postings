@@ -57,6 +57,22 @@ def test_label_file_allows_record_id_and_rejects_other_unknown_fields(tmp_path):
     assert "employment_typ" in errors[0][1]
 
 
+def test_label_file_continues_after_malformed_json_with_physical_line_numbers(tmp_path):
+    path = tmp_path / "labels.jsonl"
+    path.write_text(
+        '{"id":"job-001","company":"Acme"}\n'
+        '{"id":\n'
+        ' \n'
+        '{"id":"job-002","employment_typ":"full_time"}\n',
+        encoding="utf-8",
+    )
+
+    errors = validate_label_file(path)
+
+    assert [line for line, _ in errors] == [2, 4]
+    assert "employment_typ" in errors[1][1]
+
+
 @pytest.mark.parametrize(
     ("field", "value"),
     [("required_skills", [""]), ("nice_to_have_skills", ["   "])],
