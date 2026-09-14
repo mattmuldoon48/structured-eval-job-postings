@@ -80,13 +80,13 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-3. Copy the example environment file
+3. For live labeling, evaluation, or benchmarks, copy the example environment file. Local checks and batch previews need neither `.env` nor an API key after dependency installation.
 
 ```bash
 cp .env.example .env
 ```
 
-4. Set your OpenAI credentials in `.env`
+4. For those live commands, set your OpenAI credentials in `.env`
 
 ```env
 OPENAI_API_KEY=sk-...
@@ -155,13 +155,21 @@ Example structured label:
 3. Review the LLM draft label, accept it, or edit fields.
 4. Approved labels are appended to `data/labeled/labeled_jobs.jsonl`.
 
-For larger batches, generate draft labels for all currently unlabeled raw jobs:
+For larger batches, preview up to five pending jobs without calling the model or writing labels:
 
 ```bash
-python scripts/label_batch.py
+python scripts/label_batch.py --dry-run --limit 5
 ```
 
-Treat batch labels as draft ground truth until reviewed.
+The preview lists raw IDs absent from the labeled file, in raw-file order. Previously generated drafts already count as labeled and are skipped.
+
+Remove `--dry-run` to call the model and append draft labels for that selection:
+
+```bash
+python scripts/label_batch.py --limit 5
+```
+
+Omit `--limit` to process all currently unlabeled raw jobs. Treat batch labels as draft ground truth until reviewed.
 
 Use `labeling_notes` for ambiguous human decisions that should be visible during later prompt or policy reviews; leave it null when the label is straightforward.
 
