@@ -251,11 +251,11 @@ python scripts/run_eval.py \
 
 Cost estimates are advisory run metadata only: they depend on the rates passed at run time and do not change scoring, quality gates, or saved labels.
 
-Replay an existing prediction file without making model calls:
+Replay an existing prediction file without making model calls. In the commands below, replace the quoted run-ID placeholders with your saved run IDs and keep the quotes:
 
 ```bash
 python scripts/run_eval.py \
-  --replay-predictions reports/runs/<run-id>/predictions.jsonl
+  --replay-predictions "reports/runs/<run-id>/predictions.jsonl"
 ```
 
 Replay mode is the safest default when reviewing scoring changes: it validates and re-scores the saved `expected` and `actual` labels locally without making model calls. It does not reload ground truth from `data/labeled/labeled_jobs.jsonl`, so label corrections made after the original run are not reflected in replay scores. Use a live eval to measure prompt or model-output changes.
@@ -266,14 +266,14 @@ Compare two eval runs:
 
 ```bash
 python scripts/compare_runs.py \
-  reports/runs/<baseline-run-id>/summary.json \
-  reports/runs/<candidate-run-id>/summary.json
+  "reports/runs/<baseline-run-id>/summary.json" \
+  "reports/runs/<candidate-run-id>/summary.json"
 ```
 
 Analyze mismatches from a prediction file:
 
 ```bash
-python scripts/analyze_run.py reports/runs/<run-id>/predictions.jsonl
+python scripts/analyze_run.py "reports/runs/<run-id>/predictions.jsonl"
 ```
 
 For a quick smoke test:
