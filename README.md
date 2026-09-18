@@ -276,6 +276,15 @@ Analyze mismatches from a prediction file:
 python scripts/analyze_run.py "reports/runs/<run-id>/predictions.jsonl"
 ```
 
+The mismatch samples in `summary.json` and `report.md` are capped at 12 entries across the run. For a field-by-field review, `analyze_run.py` scans every record in the saved prediction file and shows up to three example mismatches per field by default. Increase that display limit with:
+
+```bash
+python scripts/analyze_run.py \
+  "reports/runs/<run-id>/predictions.jsonl" --examples-per-field 5
+```
+
+`--examples-per-field` changes only the displayed examples, not the mismatch counts. The table's `Average Score` is averaged over the detected mismatches for that field, not over all evaluated examples; use `summary.json` for aggregate field scores.
+
 For a quick smoke test:
 
 ```bash
