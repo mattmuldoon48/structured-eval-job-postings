@@ -34,6 +34,12 @@ Exact list F1 is reported for skill lists but is not included in `overall_mean_s
 
 Field metrics are averaged over scored examples; skill-list F1 is computed per example and then averaged, not pooled across all skills in the dataset. Matching `null` values receive full credit for scored nullable scalar fields, as do two empty skill lists; a populated value or list compared with an absent one receives zero for that field. These examples remain in the averages, so high scores on sparse fields can reflect agreement that information is absent rather than successful extraction of populated values.
 
+### Soft skill matching limitations
+
+Soft list F1 is a lexical heuristic, not semantic grading. Phrase similarity uses token overlap after case/punctuation normalization, a small synonym map, and stopword removal. Precision averages each predicted phrase's best match against the expected phrases; recall does the reverse, then the two are combined as F1. Matches are independent, not one-to-one: the same phrase can supply the best match for multiple phrases.
+
+For example, expected skills `["Python", "Python development"]` and predicted skills `["Python"]` receive soft list F1 `1.0`, because `development` is a stopword and both expected phrases match the same prediction. Exact list F1 is `2/3` for that example. Review exact and soft scores alongside the saved labels; a perfect soft score does not establish that every distinct requirement was extracted.
+
 ## Test split limitations
 
 The test split has 21 examples. That is enough to catch large regressions and show the evaluation loop, but it is not large enough to make high-confidence claims about production performance across all job-posting formats, locations, industries, and compensation styles.
