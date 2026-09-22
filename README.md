@@ -179,6 +179,8 @@ Review draft labels one at a time:
 python scripts/review_drafts.py
 ```
 
+Accepting a draft validates it against `JobPostingLabel` before saving and clearing its review marker. If validation fails, the command stops and leaves that draft unchanged on disk; correct it before accepting it again.
+
 ## Validation
 
 Run label validation for all labeled examples:

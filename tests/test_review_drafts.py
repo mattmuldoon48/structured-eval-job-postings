@@ -1,3 +1,9 @@
+import json
+
+import pytest
+from pydantic import ValidationError
+
+from scripts import review_drafts
 from scripts.review_drafts import draft_indexes, preview_text
 
 
@@ -12,3 +18,26 @@ def test_draft_indexes_finds_labels_that_need_review():
 
 def test_preview_text_truncates_long_text():
     assert preview_text("abcdef", limit=4) == "abcd..."
+
+
+def test_accept_invalid_draft_preserves_label_file(tmp_path, monkeypatch):
+    raw_path = tmp_path / "raw.jsonl"
+    raw_path.write_text(
+        json.dumps({"id": "job-001", "text": "Example posting"}) + "\n",
+        encoding="utf-8",
+    )
+    labeled_path = tmp_path / "labels.jsonl"
+    labeled_path.write_text(
+        json.dumps({"id": "job-001", "salary_min": -1, "labeling_notes": "needs human review"}) + "\n",
+        encoding="utf-8",
+    )
+    original = labeled_path.read_bytes()
+    monkeypatch.setattr(review_drafts, "RAW_PATH", raw_path)
+    monkeypatch.setattr(review_drafts, "LABELED_PATH", labeled_path)
+    monkeypatch.setattr("sys.argv", ["review_drafts.py"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: "a")
+
+    with pytest.raises(ValidationError):
+        review_drafts.run()
+
+    assert labeled_path.read_bytes() == original

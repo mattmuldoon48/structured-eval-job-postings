@@ -105,7 +105,10 @@ def run() -> None:
             updated = JobPostingLabel.model_validate(data).model_dump(mode="json")
             labels[label_index] = {"id": job_id, **updated}
         elif action in {"a", "accept"}:
-            labels[label_index] = {**record, "labeling_notes": None}
+            data = {key: value for key, value in record.items() if key != "id"}
+            data["labeling_notes"] = None
+            updated = JobPostingLabel.model_validate(data).model_dump(mode="json")
+            labels[label_index] = {"id": job_id, **updated}
         else:
             console.print("[yellow]Unknown action; skipping.[/yellow]")
             continue
