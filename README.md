@@ -173,7 +173,7 @@ Omit `--limit` to process all currently unlabeled raw jobs. Treat batch labels a
 
 Use `labeling_notes` for ambiguous human decisions that should be visible during later prompt or policy reviews; leave it null when the label is straightforward.
 
-Review draft labels one at a time:
+Review draft labels one at a time. The review queue includes labels whose `labeling_notes` contains `needs human review`, regardless of capitalization:
 
 ```bash
 python scripts/review_drafts.py

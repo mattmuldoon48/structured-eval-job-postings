@@ -60,7 +60,7 @@ def draft_indexes(labels: list[dict[str, Any]]) -> list[int]:
     return [
         index
         for index, record in enumerate(labels)
-        if DRAFT_MARKER in str(record.get("labeling_notes") or "")
+        if DRAFT_MARKER in str(record.get("labeling_notes") or "").lower()
     ]
 
 
