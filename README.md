@@ -286,6 +286,10 @@ python scripts/compare_runs.py \
   "reports/runs/<candidate-run-id>/summary.json"
 ```
 
+The comparison is descriptive, not a regression gate: every delta is candidate minus baseline. Positive score deltas indicate higher scores, but positive token, latency, or cost deltas indicate more resource use. Rows are sorted by absolute delta; because their units differ, the first row is not necessarily the most important regression. Add `--top 10` to limit the displayed rows, not to apply a quality threshold.
+
+A metric present in only one summary is displayed as `-` on the missing side, but that missing value is treated as zero when calculating its delta. Do not interpret such a delta as a measured improvement or regression. Compare runs with matching evaluated examples, splits, and metric coverage; this command does not check that they match.
+
 Analyze mismatches from a prediction file:
 
 ```bash
