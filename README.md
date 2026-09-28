@@ -228,6 +228,16 @@ python scripts/run_eval.py --split dev
 python scripts/run_eval.py --split test
 ```
 
+`create_splits.py` regenerates assignments for all raw job IDs and replaces `data/splits/job_splits.jsonl` by default. Rerun it after adding raw postings. With the same seed, existing IDs keep their assignments; adding jobs does not rebalance them to exact dev/test counts.
+
+Preview assignments in a separate file before changing the benchmark split:
+
+```bash
+python scripts/create_splits.py --output /tmp/job_splits_preview.jsonl
+```
+
+Add `--seed YOUR_SEED` to preview a different assignment, but keep the established seed when extending a benchmark you want to compare over time. `--output` changes only where the generator writes: live split evals and `check_dataset.py` still read `data/splits/job_splits.jsonl`, not the preview. The preview path is also replaced on each invocation.
+
 Run the standard dev/test benchmark and compare the splits:
 
 ```bash
