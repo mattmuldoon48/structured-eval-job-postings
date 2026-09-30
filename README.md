@@ -288,6 +288,8 @@ Replay mode is the safest default when reviewing scoring changes: it validates a
 
 Likewise, `--split` filters the saved records' `split` field rather than consulting current split assignments. A full-dataset live run saves `split: null`; replay that file without `--split`, or use predictions from a split-specific run.
 
+Replay does not carry over the source run's failure or completeness metadata: it reads only the selected prediction records, sets `requested_examples` to their count, and sets `failed_examples` to `0`. If a live run stopped early, replay can pass every quality gate on its successfully saved subset. Before treating a replay as a full-dataset result, check the original run's `summary.json` and any `errors.jsonl` against the intended example count. Replay success does not establish that the original extraction completed.
+
 Compare two eval runs:
 
 ```bash
