@@ -244,6 +244,8 @@ Run the standard dev/test benchmark and compare the splits:
 python scripts/run_benchmark.py --prompt extract_v4.txt
 ```
 
+The benchmark runs dev first, then test, using the same prompt, per-split limit, and configured quality gates. It stops on the first nonzero eval exit: a dev failure prevents the test run, and a failure in either split prevents the final comparison table. A missing comparison therefore does not mean both splits completed. Check the failing eval's output and any run artifacts it wrote before rerunning; use separate `run_eval.py --split dev` and `--split test` commands if you need to inspect both splits despite a failure.
+
 Run with quality gates:
 
 ```bash
