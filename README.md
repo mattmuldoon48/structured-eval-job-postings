@@ -197,6 +197,8 @@ python scripts/validate_labels.py
 python scripts/check_dataset.py
 ```
 
+Each split record must use the string `"dev"` or `"test"` for `split`. The dataset checker reports invalid split values—including JSON arrays or objects—alongside ID-alignment and draft-label failures, then exits with status `1`; it does not coerce malformed split values into an assignment.
+
 Or use the convenience command:
 
 ```bash

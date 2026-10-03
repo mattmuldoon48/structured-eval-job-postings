@@ -48,6 +48,26 @@ def test_validate_dataset_integrity_reports_mismatches_and_drafts():
     assert any("invalid split values" in failure for failure in failures)
 
 
+def test_container_valued_splits_preserve_other_validation_failures():
+    failures = validate_dataset_integrity(
+        raw_records=[{"id": "job-001"}, {"id": "job-002"}],
+        labeled_records=[
+            {"id": "job-001", "labeling_notes": "needs human review"},
+            {"id": "job-002", "labeling_notes": None},
+        ],
+        split_records=[
+            {"id": "job-001", "split": ["dev"]},
+            {"id": "job-002", "split": {"name": "test"}},
+        ],
+    )
+
+    assert any("draft" in failure and "job-001" in failure for failure in failures)
+    assert any(
+        "invalid split values" in failure and "job-001" in failure and "job-002" in failure
+        for failure in failures
+    )
+
+
 @pytest.mark.parametrize(
     ("collection_name", "collection_argument", "record_defaults"),
     [

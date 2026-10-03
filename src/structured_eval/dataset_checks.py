@@ -85,7 +85,7 @@ def validate_dataset_integrity(
     invalid_splits = sorted(
         f"{record.get('id')}={record.get('split')}"
         for record in split_records
-        if record.get("split") not in {"dev", "test"}
+        if record.get("split") not in ("dev", "test")
     )
     if invalid_splits:
         failures.append(f"invalid split values: {', '.join(invalid_splits)}")
