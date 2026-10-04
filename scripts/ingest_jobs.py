@@ -16,12 +16,16 @@ def load_max_id() -> int:
         lines = [line.strip() for line in stream if line.strip()]
         if not lines:
             return 0
-        last = json.loads(lines[-1])
-        job_id = last.get("id", "job-000")
-        try:
-            return int(job_id.split("-")[1])
-        except (IndexError, ValueError):
-            return len(lines)
+        max_id = 0
+        for line in lines:
+            record = json.loads(line)
+            job_id = record.get("id", "job-000")
+            try:
+                number = int(job_id.split("-")[1])
+            except (IndexError, ValueError):
+                number = len(lines)
+            max_id = max(max_id, number)
+        return max_id
 
 
 def prompt_job_text() -> str:

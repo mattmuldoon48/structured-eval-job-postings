@@ -155,6 +155,14 @@ Example structured label:
 3. Review the LLM draft label, accept it, or edit fields.
 4. Approved labels are appended to `data/labeled/labeled_jobs.jsonl`.
 
+To enter multiline raw postings interactively without model calls:
+
+```bash
+python scripts/ingest_jobs.py
+```
+
+Finish each posting with `###END###` on its own line. The command appends a new `job-NNN` ID above the highest existing job number, even when the raw records have been reordered; it does not renumber existing records or create labels.
+
 For larger batches, preview up to five pending jobs without calling the model or writing labels:
 
 ```bash
