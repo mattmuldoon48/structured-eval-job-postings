@@ -329,6 +329,10 @@ python scripts/analyze_run.py \
 
 `--examples-per-field` changes only the displayed examples, not the mismatch counts. The table's `Average Score` is averaged over the detected mismatches for that field, not over all evaluated examples; use `summary.json` for aggregate field scores.
 
+Mismatch reporting is selective, not a list of every unequal label. Enum, numeric, and boolean fields are flagged on unequal normalized values; company, title, and location are flagged when their normalized text score is below `1.0`. Skill lists are flagged only when soft list F1 is **below `0.8`**; equality is not flagged, and exact list F1 does not control this selection.
+
+For example, expected skills `["Python", "AWS", "SQL"]` versus predicted `["Python", "AWS"]` score `0.8` and produce no skill mismatch entry despite omitting SQL. “No mismatches found” therefore does not establish perfect extraction or passing quality gates. Review aggregate scores and saved predictions separately; increasing `--examples-per-field` cannot reveal differences excluded by these thresholds.
+
 For a quick smoke test:
 
 ```bash
