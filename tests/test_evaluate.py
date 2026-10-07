@@ -102,6 +102,31 @@ def test_evaluate_quality_gates_passes_when_thresholds_met():
     assert failures == []
 
 
+@pytest.mark.parametrize(
+    "overall, field_score, threshold, failed_targets",
+    [
+        (0.0, 0.0, 0.0, []),
+        (1.0, 1.0, 1.0, []),
+        (0.8, 0.8, 0.8, []),
+        (0.79, 0.8, 0.8, ["overall_mean_score"]),
+        (0.8, 0.79, 0.8, ["exact_accuracy.remote_policy"]),
+    ],
+)
+def test_quality_gates_are_inclusive_and_independent(
+    overall, field_score, threshold, failed_targets,
+):
+    failures = evaluate_quality_gates(
+        {
+            "overall_mean_score": overall,
+            "exact_accuracy": {"remote_policy": field_score},
+        },
+        min_overall=threshold,
+        metric_gates=[f"exact_accuracy.remote_policy={threshold}"],
+    )
+
+    assert [failure.split()[0] for failure in failures] == failed_targets
+
+
 def test_summarize_usage_aggregates_latency_and_tokens():
     summary = summarize_usage(
         [
