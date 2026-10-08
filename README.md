@@ -187,7 +187,9 @@ Review draft labels one at a time. The review queue includes labels whose `label
 python scripts/review_drafts.py
 ```
 
-Accepting a draft validates it against `JobPostingLabel` before saving and clearing its review marker. If validation fails, the command stops and leaves that draft unchanged on disk; correct it before accepting it again.
+Accepting a draft validates it against `JobPostingLabel` before saving and sets the entire `labeling_notes` field to `null`, not just the review marker. Use Edit instead if you need to retain a human rationale: replace the notes with your reviewed explanation and remove `needs human review`. Keeping that phrase leaves the edited record in the review queue on the next invocation.
+
+In Edit, an empty response keeps the current field value; enter the literal `null` to clear nullable notes. Each successful Accept or Edit saves immediately. Skip and Quit do not save the current draft, but do not undo earlier saves. If validation fails, the command stops and leaves that draft unchanged on disk; correct it before reviewing it again.
 
 ## Validation
 
