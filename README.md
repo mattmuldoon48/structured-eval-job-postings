@@ -291,6 +291,10 @@ python scripts/run_eval.py \
 
 Cost estimates are advisory run metadata only: they depend on the rates passed at run time and do not change scoring, quality gates, or saved labels.
 
+Both pricing flags are required; omitting either leaves `cost_estimate` as `null`. Prices are explicit inputs, not fetched model rates. In replay mode, token usage and request latency come from the selected predictions' saved `usage` records. Supplying rates reprices those saved tokens; nonzero replay cost or latency does not represent new API spend or time spent running the local replay.
+
+Usage covers retained telemetry, not necessarily every scored or attempted example. Missing or null counters contribute zero, and a live extraction that fails parsing or schema validation is excluded even if the model already returned a response. `usage.examples` counts retained usage records, and average request latency uses that count as its denominator. Zero or incomplete reported usage is therefore not proof of zero spend; use provider billing records for reconciliation.
+
 Replay an existing prediction file without making model calls. In the commands below, replace the quoted run-ID placeholders with your saved run IDs and keep the quotes:
 
 ```bash
@@ -352,7 +356,7 @@ The eval runner:
 - reports normalized text scores for company, title, and location
 - reports exact and soft F1 scores for skill lists
 - can fail the run when quality gates are not met
-- records token usage and latency for each model call
+- records token usage and request latency for successfully completed extractions
 - can estimate run cost from explicit per-token pricing inputs
 - can replay saved predictions to regenerate reports without API calls
 - can compare summary metrics across runs
