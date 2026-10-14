@@ -375,6 +375,8 @@ Each `reports/runs/<run-id>/` directory contains:
 
 Check `failed_examples` in `summary.json` and review `errors.jsonl` before treating a live run as complete. A partial run can still contain valid predictions for examples completed before the failure.
 
+Evaluation runs atomically reserve separate directories with a timestamp prefix and a unique suffix in the run ID. Runs started in the same second therefore do not share or overwrite artifacts. Use the paths printed by the runner for replay and comparison rather than constructing a directory name from the timestamp alone.
+
 Historical prompt comparison on the original 34-example set:
 
 | Prompt | Overall | Required skills soft F1 | Nice-to-have skills soft F1 | Remote policy accuracy |

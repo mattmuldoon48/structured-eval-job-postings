@@ -3,6 +3,7 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import Any
 
 from rich.console import Console
@@ -400,9 +401,10 @@ def run_replay_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dic
 
 def run() -> None:
     args = parse_args()
-    run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_dir = REPORTS_DIR / run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    prefix = datetime.now().strftime("%Y%m%d-%H%M%S-")
+    run_dir = Path(mkdtemp(prefix=prefix, dir=REPORTS_DIR))
+    run_id = run_dir.name
 
     if args.replay_predictions:
         summary = run_replay_eval(args, run_id, run_dir)
