@@ -49,7 +49,7 @@ def build_joined_records(split_name: str | None = None) -> list[dict[str, Any]]:
             {
                 "id": job_id,
                 "text": raw_by_id[job_id]["text"],
-                "expected": label,
+                "expected": {key: value for key, value in label.items() if key != "id"},
                 "split": record_split,
             }
         )

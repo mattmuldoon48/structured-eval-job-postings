@@ -148,6 +148,8 @@ Example structured label:
 }
 ```
 
+`id` belongs to the saved dataset record, not the `JobPostingLabel` schema. Live evaluation separates that identifier from the ground-truth label before validation. In saved `predictions.jsonl` records, keep `id` on the outer record; nested `expected` and `actual` objects contain label fields only. Other unknown label fields are still rejected.
+
 ## Labeling workflow
 
 1. Add raw job postings to `data/raw/job_postings.jsonl` as JSONL records with `id` and `text`.
