@@ -109,6 +109,8 @@ make benchmark
 
 Live labeling and eval commands require an OpenAI API key. CI uses replay-mode scoring where possible so the public checks do not require API credentials or spend tokens.
 
+Workload limits must be positive integers: use `--limit` for batch labeling, draft review, and live/replay evaluation, or `--limit-per-split` for benchmarking. Omitting the option processes all eligible records in the selected scope. Zero and negative values exit with usage status `2` before processing starts; zero is not a dry-run mode. Use `label_batch.py --dry-run` to preview labeling, or replay saved predictions for local scoring without model calls.
+
 ## Data layout
 
 - `data/raw/job_postings.jsonl` — raw job posting inputs

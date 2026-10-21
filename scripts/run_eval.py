@@ -229,7 +229,10 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Output token cost in USD per 1M tokens for optional cost estimation.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.limit is not None and args.limit <= 0:
+        parser.error("--limit must be a positive integer")
+    return args
 
 
 def resolve_prompt_path(prompt: str) -> Path:

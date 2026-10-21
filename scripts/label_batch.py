@@ -30,7 +30,10 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Show which jobs would be labeled without calling the model or writing labels.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.limit is not None and args.limit <= 0:
+        parser.error("--limit must be a positive integer")
+    return args
 
 
 def unlabeled_records() -> list[dict[str, Any]]:

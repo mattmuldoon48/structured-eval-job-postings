@@ -50,7 +50,10 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Output token cost in USD per 1M tokens for optional cost estimation.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.limit_per_split is not None and args.limit_per_split <= 0:
+        parser.error("--limit-per-split must be a positive integer")
+    return args
 
 
 def build_eval_command(
