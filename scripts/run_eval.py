@@ -307,6 +307,8 @@ def run_live_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dict[
     joined = build_joined_records(split_name=args.split)
     if args.limit is not None:
         joined = joined[: args.limit]
+    if not joined:
+        raise ValueError(f"No labeled examples selected for evaluation (split={args.split!r})")
     prompt_path = resolve_prompt_path(args.prompt)
     client = LLMClient.from_env()
 
@@ -384,6 +386,8 @@ def run_replay_eval(args: argparse.Namespace, run_id: str, run_dir: Path) -> dic
         records = [record for record in records if record.get("split") == args.split]
     if args.limit is not None:
         records = records[: args.limit]
+    if not records:
+        raise ValueError(f"No prediction records selected for replay (split={args.split!r})")
     metric_summary, sample_mismatches, usage_records = score_prediction_records(records)
     summary = build_summary(
         metric_summary,

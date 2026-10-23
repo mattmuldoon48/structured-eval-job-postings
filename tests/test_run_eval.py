@@ -79,3 +79,44 @@ def test_saved_labels_reach_scoring_without_relaxing_schema(
             (item["id"], item["field"], item["expected"], item["actual"])
             for item in mismatches
         ] == [("job-test", "remote_policy", "hybrid", "remote")]
+
+
+@pytest.mark.parametrize("empty_file", [False, True], ids=["unmatched-split", "empty-file"])
+def test_replay_rejects_empty_selections_without_reports(tmp_path, monkeypatch, empty_file):
+    reports = tmp_path / "runs"
+    predictions = Path(__file__).parent / "fixtures" / "replay_predictions.jsonl"
+    flags = ["--split", "missing-split"]
+    if empty_file:
+        predictions = tmp_path / "empty.jsonl"
+        predictions.write_text(" \n\t\n", encoding="utf-8")
+        flags = []
+    monkeypatch.setattr(run_eval, "REPORTS_DIR", reports)
+    monkeypatch.setattr(
+        sys, "argv", ["run_eval.py", "--replay-predictions", str(predictions), *flags]
+    )
+
+    with pytest.raises(ValueError):
+        run_eval.run()
+
+    assert not any(path.is_file() for path in reports.rglob("*"))
+
+
+def test_live_eval_rejects_empty_selection_before_model_setup(tmp_path, monkeypatch):
+    def fail_if_called():
+        raise AssertionError("Empty evaluations must not initialize the model client")
+
+    raw = tmp_path / "raw.jsonl"
+    labels = tmp_path / "labels.jsonl"
+    raw.write_text("", encoding="utf-8")
+    labels.write_text("", encoding="utf-8")
+    reports = tmp_path / "runs"
+    monkeypatch.setattr(run_eval, "RAW_PATH", raw)
+    monkeypatch.setattr(run_eval, "LABELED_PATH", labels)
+    monkeypatch.setattr(run_eval, "REPORTS_DIR", reports)
+    monkeypatch.setattr(run_eval.LLMClient, "from_env", fail_if_called)
+    monkeypatch.setattr(sys, "argv", ["run_eval.py"])
+
+    with pytest.raises(ValueError):
+        run_eval.run()
+
+    assert not any(path.is_file() for path in reports.rglob("*"))
