@@ -262,6 +262,8 @@ python scripts/run_benchmark.py --prompt extract_v4.txt
 
 The benchmark runs dev first, then test, using the same prompt, per-split limit, and configured quality gates. It stops on the first nonzero eval exit: a dev failure prevents the test run, and a failure in either split prevents the final comparison table. A missing comparison therefore does not mean both splits completed. Check the failing eval's output and any run artifacts it wrote before rerunning; use separate `run_eval.py --split dev` and `--split test` commands if you need to inspect both splits despite a failure.
 
+Each child evaluation hands its exact summary path back to the benchmark through a private temporary file. The comparison does not select the newest report in `reports/runs/`, so another evaluation finishing in the same checkout cannot replace either selected split's output.
+
 Run with quality gates:
 
 ```bash
@@ -382,6 +384,8 @@ Each `reports/runs/<run-id>/` directory contains:
 Check `failed_examples` in `summary.json` and review `errors.jsonl` before treating a live run as complete. A partial run can still contain valid predictions for examples completed before the failure.
 
 Evaluation runs atomically reserve separate directories with a timestamp prefix and a unique suffix in the run ID. Runs started in the same second therefore do not share or overwrite artifacts. Use the paths printed by the runner for replay and comparison rather than constructing a directory name from the timestamp alone.
+
+For automation, `run_eval.py --summary-path-file PATH` writes the absolute generated `summary.json` path as UTF-8 text with a trailing newline. The destination's parent directory must already exist. Use a fresh handoff file for each invocation: an error before report generation does not refresh it. The path is written after reports are saved, including when quality gates or failed examples cause exit status `1`, so the handoff is not a success signal; always check the exit status.
 
 Historical prompt comparison on the original 34-example set:
 

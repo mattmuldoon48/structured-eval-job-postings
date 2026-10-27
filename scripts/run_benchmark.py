@@ -2,8 +2,8 @@ import argparse
 import json
 import subprocess
 import sys
-import time
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 from rich.console import Console
@@ -14,7 +14,6 @@ from structured_eval.evaluate import compare_summaries
 
 ROOT = Path(__file__).resolve().parents[1]
 RUN_EVAL_PATH = ROOT / "scripts" / "run_eval.py"
-REPORTS_DIR = ROOT / "reports" / "runs"
 console = Console()
 
 
@@ -60,6 +59,7 @@ def build_eval_command(
     python_executable: str,
     split: str,
     prompt: str,
+    summary_path_file: Path,
     limit_per_split: int | None = None,
     min_overall: float | None = None,
     min_metrics: list[str] | None = None,
@@ -73,6 +73,8 @@ def build_eval_command(
         split,
         "--prompt",
         prompt,
+        "--summary-path-file",
+        str(summary_path_file),
     ]
     if limit_per_split is not None:
         command.extend(["--limit", str(limit_per_split)])
@@ -92,32 +94,23 @@ def load_summary(path: Path) -> dict[str, Any]:
         return json.load(stream)
 
 
-def latest_summary_since(start_time: float) -> Path:
-    summaries = [
-        path
-        for path in REPORTS_DIR.glob("*/summary.json")
-        if path.stat().st_mtime >= start_time
-    ]
-    if not summaries:
-        raise RuntimeError("Eval completed but no new summary.json was found.")
-    return max(summaries, key=lambda path: path.stat().st_mtime)
-
-
 def run_split(split: str, args: argparse.Namespace) -> Path:
     console.print(f"[bold cyan]Running {split} split[/bold cyan]")
-    started_at = time.time()
-    command = build_eval_command(
-        python_executable=sys.executable,
-        split=split,
-        prompt=args.prompt,
-        limit_per_split=args.limit_per_split,
-        min_overall=args.min_overall,
-        min_metrics=args.min_metric,
-        input_cost_per_1m=args.input_cost_per_1m,
-        output_cost_per_1m=args.output_cost_per_1m,
-    )
-    subprocess.run(command, cwd=ROOT, check=True)
-    return latest_summary_since(started_at)
+    with TemporaryDirectory(prefix="structured-eval-benchmark-") as directory:
+        summary_path_file = Path(directory) / "summary-path.txt"
+        command = build_eval_command(
+            python_executable=sys.executable,
+            split=split,
+            prompt=args.prompt,
+            summary_path_file=summary_path_file,
+            limit_per_split=args.limit_per_split,
+            min_overall=args.min_overall,
+            min_metrics=args.min_metric,
+            input_cost_per_1m=args.input_cost_per_1m,
+            output_cost_per_1m=args.output_cost_per_1m,
+        )
+        subprocess.run(command, cwd=ROOT, check=True)
+        return Path(summary_path_file.read_text(encoding="utf-8").strip())
 
 
 def format_value(value: Any) -> str:

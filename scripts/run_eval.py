@@ -206,6 +206,12 @@ def parse_args() -> argparse.Namespace:
         help="Re-score an existing predictions.jsonl file without making model calls.",
     )
     parser.add_argument(
+        "--summary-path-file",
+        type=Path,
+        default=None,
+        help="Write the absolute summary.json path to this file; its parent directory must exist.",
+    )
+    parser.add_argument(
         "--prompt",
         default="extract_v4.txt",
         help="Prompt file under prompts/ or an explicit path.",
@@ -417,6 +423,11 @@ def run() -> None:
         summary = run_replay_eval(args, run_id, run_dir)
     else:
         summary = run_live_eval(args, run_id, run_dir)
+
+    if args.summary_path_file is not None:
+        args.summary_path_file.write_text(
+            str((run_dir / "summary.json").resolve()) + "\n", encoding="utf-8"
+        )
 
     if summary["quality_gate_failures"] or summary["failed_examples"]:
         sys.exit(1)
