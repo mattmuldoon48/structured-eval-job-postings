@@ -67,17 +67,20 @@ See [docs/project_summary.md](docs/project_summary.md) for a reviewer-friendly o
 
 ## Setup
 
+Python **3.10 or newer** is required. These examples use `python3.11`; if you choose another installed interpreter, check that it meets the requirement before creating the environment. Run setup from the repository root.
+
 1. Create a virtual environment
 
 ```bash
-python -m venv .venv
+python3.11 --version
+python3.11 -m venv .venv
 source .venv/bin/activate
 ```
 
 2. Install dependencies
 
 ```bash
-pip install -e .
+python -m pip install -e .
 ```
 
 3. For live labeling, evaluation, or benchmarks, copy the example environment file. Local checks and batch previews need neither `.env` nor an API key after dependency installation.
