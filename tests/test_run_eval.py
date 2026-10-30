@@ -40,6 +40,52 @@ def test_same_second_replays_preserve_separate_run_artifacts(tmp_path, monkeypat
 
 
 @pytest.mark.parametrize(
+    ("gate_args", "expected_status"),
+    [
+        pytest.param([], None, id="ungated"),
+        pytest.param(["--min-overall", "0"], "passed", id="zero-overall"),
+        pytest.param(
+            ["--min-metric", "exact_accuracy.remote_policy=0"],
+            "passed",
+            id="metric-only",
+        ),
+        pytest.param(["--min-overall", "1"], "failed", id="failing-overall"),
+    ],
+)
+def test_replay_reports_only_configured_quality_gate_outcomes(
+    tmp_path, monkeypatch, gate_args, expected_status
+):
+    fixture = Path(__file__).parent / "fixtures" / "replay_predictions.jsonl"
+    records = [json.loads(line) for line in fixture.read_text(encoding="utf-8").splitlines()]
+    records[0]["actual"]["title"] = "Unrelated role"
+    predictions = tmp_path / "predictions.jsonl"
+    predictions.write_text(
+        "".join(json.dumps(record) + "\n" for record in records), encoding="utf-8"
+    )
+    reports = tmp_path / "runs"
+    monkeypatch.setattr(run_eval, "REPORTS_DIR", reports)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["run_eval.py", "--replay-predictions", str(predictions), *gate_args],
+    )
+
+    if expected_status == "failed":
+        with pytest.raises(SystemExit) as error:
+            run_eval.run()
+        assert error.value.code == 1
+    else:
+        run_eval.run()
+
+    run_dir, = reports.iterdir()
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+    if expected_status is None:
+        assert "## Quality Gates" not in report
+    else:
+        assert f"- Status: `{expected_status}`" in report
+
+
+@pytest.mark.parametrize(
     "extra_fields",
     [{}, {"employment_typ": "full_time"}],
     ids=["record-metadata", "unknown-label-field"],

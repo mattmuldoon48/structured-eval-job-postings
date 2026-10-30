@@ -139,12 +139,13 @@ def render_markdown_report(summary: dict[str, Any]) -> str:
                 ]
             )
 
-    if summary.get("quality_gates"):
+    gate_config = summary.get("quality_gates") or {}
+    if gate_config.get("min_overall") is not None or gate_config.get("min_metrics"):
         lines.extend(["", "## Quality Gates", ""])
-        lines.append(f"- Minimum overall score: `{summary['quality_gates'].get('min_overall')}`")
-        if summary["quality_gates"].get("min_metrics"):
+        lines.append(f"- Minimum overall score: `{gate_config.get('min_overall')}`")
+        if gate_config.get("min_metrics"):
             lines.append("- Minimum metric gates:")
-            for gate in summary["quality_gates"]["min_metrics"]:
+            for gate in gate_config["min_metrics"]:
                 lines.append(f"  - `{gate}`")
         if summary.get("quality_gate_failures"):
             lines.append("- Status: `failed`")

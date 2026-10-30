@@ -278,6 +278,8 @@ python scripts/run_eval.py \
 
 `--min-overall` and each repeatable `--min-metric metric_group.field=value` set inclusive minimum scores: equality passes, and every configured gate must pass. Thresholds must be between `0` and `1`, inclusive; metric targets must name a field in the corresponding summary metric group. If a valid gate is not met, the runner writes its normal run artifacts and exits with status `1`; inspect `quality_gate_failures` in `summary.json` for the reasons.
 
+Without either gate option, the run is ungated: `report.md` omits the Quality Gates section and makes no passing-gate claim. An empty `quality_gate_failures` list alone does not establish that any acceptance threshold was checked; inspect `quality_gates` as well. An explicit threshold of `0` still configures a gate.
+
 Gate configuration is checked after generation/scoring, not before live model calls. Malformed metric expressions, out-of-range thresholds, and unknown metric targets raise an error before the normal prediction and report files are written. Check new gate settings locally first by using the same options with the replay fixture:
 
 ```bash
